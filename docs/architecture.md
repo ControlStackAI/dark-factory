@@ -70,16 +70,20 @@ transition before issue advancement.
 ### Deterministic advancement and retry
 
 The next issue is chosen only from unblocked Ready issues in the same project. Ordering is
-priority (with zero/unset last), then creation time, then issue ID; the current issue is never
+priority (with zero/unset last), then creation time, then Linear identifier; the current issue is never
 eligible to select itself. Before calling Linear, the controller persists the exact current
 issue, next issue, evidence, review ID, and stable idempotency key as a pending advancement.
 Retries reuse that frozen decision, and no new checkpoint, agent turn, or review binding is
 accepted until it is reconciled. An expired worker cannot finalize the controller state after
 an adapter call; a newly fenced worker retries the same idempotent advancement.
 
-The Linear adapter contract requires advancement to be idempotent for the key and to treat
-completion plus adoption as one logical operation. A production Linear adapter will need to
-reconcile Linear's API behavior with this contract explicitly.
+The M2 Linear adapter treats completion plus adoption as one logical controller operation,
+but does not claim Linear makes those calls atomic. It queries structured keyed comments
+containing only an evidence digest rather than raw review evidence,
+before creating them, reconciles every ambiguous comment/state mutation, refuses conflicting
+keys or scope, and verifies final Done/In Progress state plus the intended comments before it
+returns success. A crash may leave temporary partial remote state; restart converges using the
+same frozen intent and never selects a replacement during reconciliation.
 
 ## Durable storage
 
@@ -138,10 +142,11 @@ point of maximum ambiguity.
 
 - `factoryd` supports only `--once`; continuous scheduling, recovery supervision, and service
   installation are not implemented.
-- Linear and OpenClaw contracts exist, but live adapters and credential handling do not.
-- The durable issue adapter is a local reference implementation. A live Linear adapter must
-  provide durable idempotency/receipt reconciliation against Linear's API; SQLite alone
-  cannot make an arbitrary remote API transaction atomic.
+- The bounded Linear Cloud adapter exists and is fake-tested, but live daemon composition is
+  unavailable until the OpenClaw executor and supervisor arrive in M3.
+- Linear cannot atomically complete one issue and adopt another. SQLite freezes controller
+  intent; independently reconcilable remote suboperations and final verification make restart
+  convergence honest but cannot eliminate temporary partial Linear state.
 - Review artifacts are stored as SQLite blobs only for the credential-free slice. Production
   artifact retention and backup policy are not defined.
 - The phase journal is append-only in schema v1; retention, compaction, and archive growth

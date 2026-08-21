@@ -86,9 +86,9 @@ func (o *Operator) Doctor() DoctorReport {
 	checks = append(checks, checkStateDB(o.Config.Paths.StateDB))
 	_, secretErr := config.ResolveSecret(o.Config.Linear.APIKey)
 	if secretErr != nil {
-		checks = append(checks, Check{Name: "linear", Status: "not-ready", Message: "secret environment reference is unavailable; adapter is not implemented until M2"})
+		checks = append(checks, Check{Name: "linear", Status: "not-ready", Message: "secret environment reference is unavailable; offline doctor did not contact Linear"})
 	} else {
-		checks = append(checks, Check{Name: "linear", Status: "degraded", Message: "configuration is present; adapter is not implemented until M2"})
+		checks = append(checks, Check{Name: "linear", Status: "degraded", Message: "offline check only; use doctor --online for the bounded query-only probe"})
 	}
 	if executableAvailable(o.Config.OpenClaw.Executable) {
 		checks = append(checks, Check{Name: "openclaw", Status: "degraded", Message: "executable is discoverable; executor is not implemented until M3"})
@@ -103,6 +103,34 @@ func (o *Operator) Doctor() DoctorReport {
 	}
 	report := DoctorReport{Status: "ready", Checks: checks}
 	for _, check := range checks {
+		if check.Status == "not-ready" {
+			report.Status = "not-ready"
+			break
+		}
+		if check.Status == "degraded" {
+			report.Status = "degraded"
+		}
+	}
+	return report
+}
+
+// WithOnlineLinearProbe overlays the result of an explicit query-only Linear probe on the
+// otherwise offline doctor report. The caller owns constructing and invoking the adapter so
+// default doctor execution cannot accidentally perform network I/O.
+func WithOnlineLinearProbe(report DoctorReport, probeErr error) DoctorReport {
+	for index := range report.Checks {
+		if report.Checks[index].Name != "linear" {
+			continue
+		}
+		if probeErr == nil {
+			report.Checks[index] = Check{Name: "linear", Status: "ready", Message: "explicit query-only scope and lifecycle probe succeeded"}
+		} else {
+			report.Checks[index] = Check{Name: "linear", Status: "not-ready", Message: "explicit query-only probe failed: " + probeErr.Error()}
+		}
+		break
+	}
+	report.Status = "ready"
+	for _, check := range report.Checks {
 		if check.Status == "not-ready" {
 			report.Status = "not-ready"
 			break

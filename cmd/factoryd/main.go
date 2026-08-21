@@ -80,7 +80,7 @@ func run(args []string, stdout, stderr io.Writer) error {
 const daemonUsage = `usage: factoryd --once --config PATH [--apply]
        factoryd --once --state STATE_DB
 
-M1 supports credential-free --once execution. Live execution requires both
-config mode live and --apply, then fails closed because adapters arrive in M2/M3.
+M2 supports credential-free --once execution. Live execution requires both
+config mode live and --apply, then fails closed until the M3 OpenClaw side exists.
 The --state form preserves the M0 restart-safe credential-free recovery fixture.
 `

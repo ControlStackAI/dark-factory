@@ -72,13 +72,14 @@ type Run struct {
 }
 
 type Issue struct {
-	ID        string
-	ProjectID string
-	Title     string
-	Priority  int
-	CreatedAt time.Time
-	State     IssueState
-	Blocked   bool
+	ID         string
+	Identifier string
+	ProjectID  string
+	Title      string
+	Priority   int
+	CreatedAt  time.Time
+	State      IssueState
+	Blocked    bool
 }
 
 type ReviewStatus string

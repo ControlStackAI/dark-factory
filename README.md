@@ -6,11 +6,10 @@ Linear plus OpenClaw, with the controller—not prompts—enforcing safety and d
 
 ## Status
 
-This repository contains the M1 operator surface around the credential-free controller
-vertical slice and restart-safe SQLite recovery kernel. It is not yet a production daemon:
-live Linear arrives in M2 and the OpenClaw executor/continuous supervisor in M3. M1 proves
-configuration, filesystem policy, offline diagnostics, and the live/apply interlock without
-contacting either service.
+This repository contains the credential-free controller kernel, the M1 operator surface, and
+the M2 bounded Linear GraphQL adapter. It is not yet a production daemon: the OpenClaw
+executor and continuous supervisor arrive in M3, so configured live execution remains
+deliberately unavailable.
 
 Implemented controller invariants include:
 
@@ -19,7 +18,7 @@ Implemented controller invariants include:
 - rejection of stale, expired, and non-monotonic mutations;
 - evidence-bearing checkpoints as the only lease-renewal path;
 - bounded agent attempts, consecutive failures, and wall-clock duration;
-- deterministic advancement by priority, creation time, then issue ID;
+- deterministic advancement by normalized priority, creation time, then Linear identifier;
 - a frozen pending advancement and adapter idempotency key for safe retry;
 - durable attempt reservations, review consumption, and atomic advancement receipts;
 - exactly-once local reference mutations after timeout/commit ambiguity;
@@ -59,7 +58,7 @@ process call. Both `factoryctl recover STATE_DB` and the published M0-compatible
 `status`, `dry-run`, and dry-mode `factoryd --once` make no network or executor calls; the M1
 dry run does not create durable live-run state.
 
-Live mode is deliberately unusable at M1. Both keys are required before the live branch is
+Live mode remains deliberately unusable until M3. Both keys are required before the live branch is
 even selected:
 
 ```console
@@ -71,9 +70,17 @@ go run ./cmd/factoryd --once --apply --config "$config_dir/factory.json"
 # live execution is not implemented until M2/M3; no external action was taken
 ```
 
-`doctor --json` reports config, state DB, Linear, OpenClaw, review root, artifact root, and
-service environment separately. Linear and OpenClaw cannot be `ready` while their production
-adapters are absent; this is expected degraded/not-ready M1 behavior.
+`doctor --json` stays offline and reports config, state DB, Linear, OpenClaw, review root,
+artifact root, and service environment separately. `doctor --online` is the sole M2 opt-in
+network diagnostic: it performs bounded, query-only checks of the exact configured Linear
+team, project, issue, and lifecycle states. OpenClaw cannot be ready until M3.
+
+The Linear adapter completely paginates issues, relationships, lifecycle states, and keyed
+comments; enforces the configured team/project/allowlist; and reconciles each frozen claim or
+advancement suboperation after ambiguous responses. Linear does not provide an atomic
+complete-and-adopt transaction. A crash may expose temporary partial remote state, while a
+restart using the same frozen intent converges without duplicate controller comments or a
+different next issue.
 
 Available development commands:
 
@@ -99,6 +106,7 @@ internal/factory/          fail-closed controller transitions
 internal/ports/            Linear, OpenClaw, state, review, and artifact contracts
 internal/adapters/memory/  credential-free adapter implementations and test fakes
 internal/adapters/sqlite/  schema-v1 durable store and local recovery adapter
+internal/adapters/linear/  bounded GraphQL client and strict fake-server tests
 internal/app/              executable vertical-slice composition
 ```
 

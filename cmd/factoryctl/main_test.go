@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,18 @@ import (
 
 	"github.com/ControlStackAI/dark-factory/internal/config"
 )
+
+type recordingProbe struct {
+	calls int
+	issue string
+	err   error
+}
+
+func (p *recordingProbe) Probe(_ context.Context, issue string) error {
+	p.calls++
+	p.issue = issue
+	return p.err
+}
 
 func TestInitValidateAndNoOverwrite(t *testing.T) {
 	path := filepath.Join(privateTemp(t), "factory.json")
@@ -69,6 +82,34 @@ func TestDoctorJSONGoldenHasSeparateReadinessAndNoSecret(t *testing.T) {
 	sort.Strings(got)
 	if fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("checks=%v", got)
+	}
+}
+
+func TestDoctorOnlineIsExplicitAndQueryOnlyProbeIsReported(t *testing.T) {
+	path, cfg := initializedConfig(t)
+	t.Setenv("LINEAR_API_KEY", "test-only")
+	probe := &recordingProbe{}
+	original := newOnlineLinearProbe
+	newOnlineLinearProbe = func(got config.Config) (linearProbe, error) {
+		if got.Scope.TeamID != cfg.Scope.TeamID || got.Scope.ProjectID != cfg.Scope.ProjectID {
+			t.Fatalf("probe constructed with wrong scope")
+		}
+		return probe, nil
+	}
+	t.Cleanup(func() { newOnlineLinearProbe = original })
+	var out, stderr bytes.Buffer
+	if err := run([]string{"doctor", "--config", path, "--json"}, &out, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	if probe.calls != 0 {
+		t.Fatal("default doctor invoked the online probe")
+	}
+	out.Reset()
+	if err := run([]string{"doctor", "--config", path, "--online", "--json"}, &out, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	if probe.calls != 1 || probe.issue != cfg.Scope.IssueID || !strings.Contains(out.String(), "query-only scope and lifecycle probe succeeded") {
+		t.Fatalf("calls=%d issue=%q output=%s", probe.calls, probe.issue, out.String())
 	}
 }
 

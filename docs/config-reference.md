@@ -59,8 +59,8 @@ limits:
 ## Field contract
 
 - `mode` is exactly `dry-run` or `live`. Live mutation requires both `mode: live` and the
-  daemon process flag `--apply`. At M1, satisfying both keys proves the gate and then returns
-  `live execution is not implemented until M2/M3`; no network client or executor is built.
+  daemon process flag `--apply`. At M2, satisfying both keys proves the gate and then fails
+  closed because the OpenClaw executor is not implemented until M3.
 - `paths.state_db` must be inside `paths.state_root`. The state, artifact, and review roots
   must be distinct and non-overlapping. The workspace and every controller path must resolve
   inside at least one `allowed_roots` entry.
@@ -80,20 +80,22 @@ limits:
   M1 never executes this command; M3 will define the argv contract.
 - Every duration in `budgets` is positive. `max_backoff` is at least `initial_backoff`;
   `max_attempts` is 1–1000; consecutive failures are 1 through `max_attempts`.
-- Lifecycle values are preferred names only. M2 will resolve actual Linear states by lifecycle
-  type and use these names solely as deterministic preferences.
+- Lifecycle values are preferred names only. M2 resolves Linear states by lifecycle type and
+  uses these names solely to disambiguate multiple states of the same type. A missing or still
+  ambiguous type fails closed.
 - Output bytes are bounded to 1 KiB–16 MiB, artifact bytes to 1 KiB–1 GiB, and artifact count
   to 1–10,000. M4 will enforce packet membership and receipt semantics.
 
-## Command behavior at M1
+## Command behavior through M2
 
 - `factoryctl init --config PATH` creates missing private roots and atomically installs a
   `0600` config without replacing any existing file, symlink, or concurrent winner.
-- `validate` and `doctor` are read-only. `doctor` is offline and reports each dependency
-  separately; adapter absence is never reported ready.
+- `validate` and default `doctor` are read-only and offline. `doctor --online` explicitly opts
+  into a bounded, query-only Linear scope/lifecycle probe and invokes no mutation operation.
 - `dry-run` uses only in-memory fakes and does not create the configured state DB.
 - `status` inspects the configured state path without opening SQLite or creating files.
 - `factoryd --once` uses the same `internal/app` composition root as the operator commands.
 
-Production Linear requests, OpenClaw execution, continuous scheduling, review packet import,
-service installation, and release packaging are outside M1.
+The Linear client exists but is not connected to live daemon execution. OpenClaw execution,
+continuous scheduling, review packet import, service installation, and release packaging
+remain later milestones.
