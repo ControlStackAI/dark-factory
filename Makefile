@@ -22,5 +22,8 @@ smoke:
 	go run ./cmd/factoryctl version
 	go run ./cmd/factoryctl dry-run >/dev/null
 	go run ./cmd/factoryd --once >/dev/null
+	@tmp=$$(mktemp -d); trap 'rm -rf "$$tmp"' EXIT; \
+		go run ./cmd/factoryctl recover "$$tmp/factory.db" >/dev/null; \
+		go run ./cmd/factoryd --once --state "$$tmp/factory.db" >/dev/null
 
 check: fmt-check test lint build smoke

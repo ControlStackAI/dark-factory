@@ -1,4 +1,4 @@
-# Bootstrap Architecture
+# Controller and Durable Recovery Architecture
 
 ## Product Boundary
 
@@ -8,8 +8,8 @@ adapter; neither adapter decides whether a controller transition is valid. Workf
 policies and skills may guide an agent, but their claims never substitute for controller
 state or review evidence.
 
-The bootstrap uses the same ports with in-memory implementations so the complete slice is
-executable without credentials or network access.
+The credential-free slices use the same ports with either in-memory implementations or a
+SQLite adapter, so recovery is executable without credentials or network access.
 
 ## Layers
 
@@ -81,13 +81,74 @@ The Linear adapter contract requires advancement to be idempotent for the key an
 completion plus adoption as one logical operation. A production Linear adapter will need to
 reconcile Linear's API behavior with this contract explicitly.
 
+## Durable storage
+
+Schema version 1 stores validated run snapshots, an append-only phase journal, attempt
+reservations, immutable review metadata and consumption, artifact bytes and digests, local
+issue fixtures, and advancement receipts. Every run mutation uses an atomic conditional
+update on the expected version. The updated snapshot, attempt reservation when applicable,
+and journal entry commit in the same transaction. Review consumption commits with its
+journal record. The credential-free Linear reference adapter commits current/next issue
+state, the idempotency receipt, and its journal record together.
+
+The database uses WAL mode, `synchronous=FULL`, foreign keys, a 5-second busy timeout, and
+one pooled connection. This is intentionally a single-controller design: goroutines are
+serialized through one writer connection, while a second process receives an explicit busy
+error after the bounded wait. Controller CAS retries version conflicts within its fixed retry
+limit; it does not multiply SQLite's bounded busy wait.
+
+The SQLite driver is `modernc.org/sqlite`, a pure-Go implementation. Builds therefore do not
+require CGO or a system SQLite library, at the cost of a larger dependency and binary than a
+CGO-backed driver.
+
+### Open and migration policy
+
+The database carries both SQLite `application_id` and `user_version` markers plus a format
+record. Every open runs `quick_check`, verifies all required tables, foreign keys, run JSON,
+counter/reservation agreement, journal metadata, artifact hashes, review records, issues,
+and advancement receipts. Unknown fields in persisted JSON are rejected.
+
+Only an empty version-0 database may be initialized as schema v1. A non-empty unversioned
+database, wrong application ID, incomplete schema, invalid record, corruption, or a schema
+newer than the binary is a hard startup error. Schema creation is transactional; failures
+are returned and the database is never deleted, reset, downgraded, or partially accepted.
+There are no historical migrations yet. Future migrations must preserve this transactional,
+forward-only, fail-closed policy.
+
+### Crash reconciliation
+
+An OpenClaw attempt is reserved and journaled before dispatch. Losing the process after that
+commit consumes the attempt but cannot dispatch it twice; recovery uses the next attempt.
+Lease fence counters live in the run snapshot, so a newly acquired lease always exceeds all
+pre-restart tokens and stale workers remain rejected.
+
+Completion first freezes its exact issue decision, evidence, review, and idempotency key.
+Review consumption is durable and idempotent only for the same run/digest. If the remote
+reference mutation commits but its acknowledgement is lost, restart finds the frozen
+operation and repeats the same key. The receipt proves the mutation already happened, so the
+adapter returns success without changing issues again; only then does the controller clear
+the pending operation and advance local state. A lost acknowledgement of that final local
+commit is also safe because reopen observes the reconciled snapshot.
+
+Deterministic after-commit hooks test each persisted controller and advancement boundary by
+returning an error only after the transaction is durable, modeling abrupt termination at the
+point of maximum ambiguity.
+
 ## Current Limitations
 
-- Run state, issue state, review metadata, and artifacts are memory-only.
-- `factoryd` supports only `--once`; scheduling, recovery supervision, and service install
-  are not implemented.
+- `factoryd` supports only `--once`; continuous scheduling, recovery supervision, and service
+  installation are not implemented.
 - Linear and OpenClaw contracts exist, but live adapters and credential handling do not.
-- Configuration, migrations, observability, workflow/skill packaging, and signed release
+- The durable issue adapter is a local reference implementation. A live Linear adapter must
+  provide durable idempotency/receipt reconciliation against Linear's API; SQLite alone
+  cannot make an arbitrary remote API transaction atomic.
+- Review artifacts are stored as SQLite blobs only for the credential-free slice. Production
+  artifact retention and backup policy are not defined.
+- The phase journal is append-only in schema v1; retention, compaction, and archive growth
+  monitoring are not implemented yet. Startup validation scans durable records and will grow
+  more expensive with database size.
+- Online backup, multi-controller replication, historical migrations, observability,
+  configuration, workflow/skill packaging, and signed release
   artifacts remain future milestones.
 
 These limitations are intentional: this milestone establishes an executable safety kernel

@@ -9,6 +9,7 @@ import (
 
 	"github.com/ControlStackAI/dark-factory/internal/app"
 	"github.com/ControlStackAI/dark-factory/internal/buildinfo"
+	"github.com/ControlStackAI/dark-factory/internal/domain"
 )
 
 func main() {
@@ -21,6 +22,7 @@ func main() {
 func run(args []string) error {
 	flags := flag.NewFlagSet("factoryd", flag.ContinueOnError)
 	once := flags.Bool("once", false, "run the credential-free vertical slice once")
+	state := flags.String("state", "", "SQLite state path for the durable credential-free slice")
 	version := flags.Bool("version", false, "print version")
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -35,7 +37,13 @@ func run(args []string) error {
 	if !*once {
 		return fmt.Errorf("no persistent daemon is configured in this bootstrap; use --once")
 	}
-	run, err := app.DryRun(context.Background())
+	var run domain.Run
+	var err error
+	if *state == "" {
+		run, err = app.DryRun(context.Background())
+	} else {
+		run, err = app.DurableDryRun(context.Background(), *state)
+	}
 	if err != nil {
 		return err
 	}

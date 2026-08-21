@@ -18,8 +18,15 @@ func main() {
 }
 
 func run(args []string) error {
+	if len(args) == 2 && args[0] == "recover" {
+		run, err := app.DurableDryRun(context.Background(), args[1])
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(os.Stdout).Encode(run)
+	}
 	if len(args) != 1 {
-		return fmt.Errorf("usage: factoryctl <version|dry-run>")
+		return fmt.Errorf("usage: factoryctl <version|dry-run|recover STATE_PATH>")
 	}
 	switch args[0] {
 	case "version":

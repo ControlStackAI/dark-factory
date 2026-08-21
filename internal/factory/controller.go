@@ -18,6 +18,7 @@ var (
 	ErrAlreadyExists     = ports.ErrAlreadyExists
 	ErrNotFound          = ports.ErrNotFound
 	ErrConflict          = ports.ErrConflict
+	ErrBusy              = ports.ErrBusy
 	ErrInvalidTransition = ports.ErrInvalidTransition
 	ErrStaleFence        = ports.ErrStaleFence
 )
