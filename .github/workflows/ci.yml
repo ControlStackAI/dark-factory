@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Check formatting
+        run: make fmt-check
+      - name: Test with race detector
+        run: make test-race
+      - name: Vet
+        run: make lint
+      - name: Build
+        run: make build
+      - name: Smoke test commands
+        run: make smoke
