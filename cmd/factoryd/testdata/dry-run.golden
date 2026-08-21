@@ -1,0 +1,1 @@
+{"id":"dry-run","project_id":"demo","issue_id":"DF-2","status":"active","step":"adopted DF-2","attempts":1,"evidence":["go test ./... passed for dry-run fixture","review-DF-1 approved immutable artifact"]}

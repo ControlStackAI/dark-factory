@@ -6,10 +6,11 @@ Linear plus OpenClaw, with the controller—not prompts—enforcing safety and d
 
 ## Status
 
-This repository contains a credential-free controller vertical slice and its restart-safe
-SQLite recovery kernel. It is not yet a production daemon: scheduling and live
-Linear/OpenClaw adapters remain future milestones. The same controller ports execute against
-in-memory fakes or the durable local reference adapter.
+This repository contains the M1 operator surface around the credential-free controller
+vertical slice and restart-safe SQLite recovery kernel. It is not yet a production daemon:
+live Linear arrives in M2 and the OpenClaw executor/continuous supervisor in M3. M1 proves
+configuration, filesystem policy, offline diagnostics, and the live/apply interlock without
+contacting either service.
 
 Implemented controller invariants include:
 
@@ -32,18 +33,47 @@ Requires Go 1.24 or newer.
 
 ```console
 make check
-go run ./cmd/factoryctl dry-run
-go run ./cmd/factoryd --once
-state_dir=$(mktemp -d)
-go run ./cmd/factoryctl recover "$state_dir/factory.db"
-go run ./cmd/factoryd --once --state "$state_dir/factory.db"
+config_dir=$(mktemp -d)
+chmod 700 "$config_dir"
+go run ./cmd/factoryctl init --config "$config_dir/factory.json"
+LINEAR_API_KEY=local-placeholder go run ./cmd/factoryctl validate --config "$config_dir/factory.json" --json
+go run ./cmd/factoryctl doctor --config "$config_dir/factory.json" --json
+go run ./cmd/factoryctl dry-run --config "$config_dir/factory.json" --json
+go run ./cmd/factoryctl status --config "$config_dir/factory.json" --json
+go run ./cmd/factoryd --once --config "$config_dir/factory.json"
+go run ./cmd/factoryd --once --state "$config_dir/recovery.db"
 ```
 
-The in-memory executable examples run the same local fixture: start a run, acquire a lease,
+`init` creates the config as `0600` and its state, artifact, and review directories as `0700`.
+It refuses every existing final path and uses an atomic no-replace install. `validate` is
+strict and requires the referenced environment variable to exist; use a real secret only in
+an eventual service environment, never in the config itself. See
+[docs/config-reference.md](docs/config-reference.md) for every M1 field and path rule.
+
+The dry-run executables run the same in-memory fixture: start a run, acquire a lease,
 execute one bounded OpenClaw turn, bind immutable review evidence, complete the current
-issue, and deterministically adopt the next issue. `recover` and `--state` run a one-issue
-SQLite fixture; reopening the same path validates and returns the already completed run
-without another attempt or mutation. None of these commands makes a network call.
+issue, and deterministically adopt the next issue. This is a fake adapter, not an OpenClaw
+process call. Both `factoryctl recover STATE_DB` and the published M0-compatible
+`factoryd --once --state STATE_DB` entry point retain the restart-safe one-issue SQLite fixture;
+`--state` is mutually exclusive with configured or applied execution. `validate`, `doctor`,
+`status`, `dry-run`, and dry-mode `factoryd --once` make no network or executor calls; the M1
+dry run does not create durable live-run state.
+
+Live mode is deliberately unusable at M1. Both keys are required before the live branch is
+even selected:
+
+```console
+# mode: live without --apply: refused
+go run ./cmd/factoryd --once --config "$config_dir/factory.json"
+
+# mode: live plus --apply: interlock proven, then fails closed
+go run ./cmd/factoryd --once --apply --config "$config_dir/factory.json"
+# live execution is not implemented until M2/M3; no external action was taken
+```
+
+`doctor --json` reports config, state DB, Linear, OpenClaw, review root, artifact root, and
+service environment separately. Linear and OpenClaw cannot be `ready` while their production
+adapters are absent; this is expected degraded/not-ready M1 behavior.
 
 Available development commands:
 
@@ -61,8 +91,9 @@ make check      # run the local merge gate
 ## Repository Layout
 
 ```text
-cmd/factoryd/              controller daemon entry point (bootstrap --once mode)
-cmd/factoryctl/            operator CLI entry point
+cmd/factoryd/              shared-composition --once entry point and live interlock
+cmd/factoryctl/            init/validate/doctor/dry-run/status operator CLI
+internal/config/           strict config decoding, path policy, and no-replace init
 internal/domain/           state, issue, review, and deterministic selection model
 internal/factory/          fail-closed controller transitions
 internal/ports/            Linear, OpenClaw, state, review, and artifact contracts
