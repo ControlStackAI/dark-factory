@@ -8,8 +8,9 @@ Linear plus OpenClaw, with the controller—not prompts—enforcing safety and d
 
 This repository contains the credential-free controller kernel, the M1 operator surface,
 the M2 bounded Linear GraphQL adapter, the M3 argv-safe OpenClaw executor plus foreground
-continuous supervisor, and the M4 filesystem review-packet importer. Forced-restart release
-composition and packaging remain later milestones, so this is not yet a v0.1 release candidate.
+continuous supervisor, the M4 filesystem review-packet importer, and the M5 forced-restart
+release-composition proof. Packaging remains a later milestone, so this is not yet a v0.1
+release candidate.
 
 Implemented controller invariants include:
 
@@ -123,11 +124,19 @@ make fmt        # rewrite Go files with gofmt
 make fmt-check  # fail if formatting differs
 make test       # run unit tests
 make test-race  # run unit tests with the race detector
+make m5         # run the retained 20-seed/40-scenario forced-restart race matrix
 make lint       # run go vet
 make build      # compile all packages and commands
 make smoke      # execute credential-free command smoke tests
 make check      # run the local merge gate
 ```
+
+`make m5` builds the real `factoryd` composition with a test-only fault-injection build tag,
+starts fake Linear HTTP and fake OpenClaw as independent OS processes, and sends `SIGKILL`
+only after a named phase witness has been fsynced. Every before/after row restarts against the
+same SQLite database and filesystem roots. The retained seed list, matrix receipt, full race
+log, and SHA-256 manifest are written under `test-results/m5/`. Normal binaries do not include
+the fault injector.
 
 ## Repository Layout
 

@@ -221,6 +221,7 @@ func TestValidationAcceptsExactBoundaries(t *testing.T) {
 		{"initial-backoff", func(c *Config) { c.Budgets.InitialBackoff = "1ns" }},
 		{"max-backoff", func(c *Config) { c.Budgets.InitialBackoff = "1ns"; c.Budgets.MaxBackoff = "1ns" }},
 		{"shutdown-timeout", func(c *Config) { c.Budgets.ShutdownTimeout = "1ns" }},
+		{"loopback-http", func(c *Config) { c.Linear.Endpoint = "http://127.0.0.1:12345/graphql" }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

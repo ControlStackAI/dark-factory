@@ -28,3 +28,5 @@ jobs:
         run: make build
       - name: Smoke test commands
         run: make smoke
+      - name: Forced-restart E2E (M5)
+        run: make m5

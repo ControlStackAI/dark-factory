@@ -32,7 +32,15 @@ func main() {
 	record := transcript{Executable: os.Args[0], Args: os.Args[1:], Prompt: string(prompt), PromptMode: uint32(info.Mode().Perm()), PID: os.Getpid(), LinearSecretPresent: linearPresent}
 	if path := os.Getenv("FAKE_OPENCLAW_TRANSCRIPT"); path != "" {
 		encoded, _ := json.Marshal(record)
-		_ = os.WriteFile(path, append(encoded, '\n'), 0o600)
+		if os.Getenv("FAKE_OPENCLAW_TRANSCRIPT_APPEND") == "1" {
+			if file, openErr := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o600); openErr == nil {
+				_, _ = file.Write(append(encoded, '\n'))
+				_ = file.Sync()
+				_ = file.Close()
+			}
+		} else {
+			_ = os.WriteFile(path, append(encoded, '\n'), 0o600)
+		}
 	}
 	scenario := os.Getenv("FAKE_OPENCLAW_SCENARIO")
 	switch scenario {

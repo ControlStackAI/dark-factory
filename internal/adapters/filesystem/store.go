@@ -113,6 +113,20 @@ func (s *Store) CompareAndSwap(ctx context.Context, id string, version uint64, r
 }
 
 func (s *Store) GetReview(ctx context.Context, id string) (domain.ReviewEvidence, error) {
+	if err := s.callHook("before_review_import"); err != nil {
+		return domain.ReviewEvidence{}, err
+	}
+	review, err := s.getReview(ctx, id)
+	if err != nil {
+		return domain.ReviewEvidence{}, err
+	}
+	if err := s.callHook("after_review_import"); err != nil {
+		return domain.ReviewEvidence{}, err
+	}
+	return review, nil
+}
+
+func (s *Store) getReview(ctx context.Context, id string) (domain.ReviewEvidence, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	packet, err := s.findSnapshot(ctx, id)

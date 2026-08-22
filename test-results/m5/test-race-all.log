@@ -1,0 +1,14 @@
+ok  	github.com/ControlStackAI/dark-factory/cmd/factoryctl	1.304s
+ok  	github.com/ControlStackAI/dark-factory/cmd/factoryd	2.492s
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/filesystem	19.451s
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/linear	1.589s
+?   	github.com/ControlStackAI/dark-factory/internal/adapters/memory	[no test files]
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/openclaw	4.029s
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/sqlite	3.490s
+ok  	github.com/ControlStackAI/dark-factory/internal/app	2.712s
+?   	github.com/ControlStackAI/dark-factory/internal/buildinfo	[no test files]
+ok  	github.com/ControlStackAI/dark-factory/internal/config	1.215s
+ok  	github.com/ControlStackAI/dark-factory/internal/domain	1.011s
+ok  	github.com/ControlStackAI/dark-factory/internal/e2e	1.013s
+ok  	github.com/ControlStackAI/dark-factory/internal/factory	1.014s
+?   	github.com/ControlStackAI/dark-factory/internal/ports	[no test files]

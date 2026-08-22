@@ -31,7 +31,7 @@ func run(args []string, stdout, stderr io.Writer) error {
 }
 
 var runLiveSupervisor = func(ctx context.Context, cfg config.Config) (domain.Run, error) {
-	supervisor, err := app.NewProductionSupervisor(cfg)
+	supervisor, err := app.NewProductionSupervisorWithHooks(cfg, productionHooks())
 	if err != nil {
 		return domain.Run{}, err
 	}

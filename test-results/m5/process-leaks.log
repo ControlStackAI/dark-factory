@@ -1,0 +1,4 @@
+=== Host process check before M5 ===
+No processes found before run
+=== Host process check after M5 ===
+No residual factoryd, fake-openclaw, or fake-linear processes found after run

@@ -14,3 +14,7 @@ coverage/
 *.tmp
 *~
 .DS_Store
+
+# Do not ignore test-results
+!test-results/
+!test-results/**

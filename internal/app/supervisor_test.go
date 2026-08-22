@@ -135,6 +135,70 @@ func TestSupervisorReconcilesFrozenAdvanceBeforeAnyDispatch(t *testing.T) {
 	}
 }
 
+func TestSupervisorDoesNotReclaimIssueAlreadyAdoptedByVerifiedAdvance(t *testing.T) {
+	ctx := context.Background()
+	store, err := durablesqlite.Open(filepath.Join(t.TempDir(), "factory.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	created := time.Now().UTC()
+	linear := memory.NewLinear(
+		domain.Issue{ID: "DF-1", Identifier: "DF-1", ProjectID: "project", State: domain.IssueInProgress, CreatedAt: created, Priority: 1},
+		domain.Issue{ID: "DF-2", Identifier: "DF-2", ProjectID: "project", State: domain.IssueReady, CreatedAt: created.Add(time.Second), Priority: 2},
+	)
+	firstAgent := memory.NewOpenClaw(memory.Turn{Result: goodTurn()})
+	controller := factory.New(store, linear, firstAgent, store, store)
+	if _, err := controller.Start(ctx, "multi-run", "project", "DF-1", "start", policy(time.Minute, 2, 2)); err != nil {
+		t.Fatal(err)
+	}
+	lease, err := controller.AcquireLease(ctx, "multi-run", "worker")
+	if err != nil {
+		t.Fatal(err)
+	}
+	turn, err := controller.ExecuteTurn(ctx, "multi-run", lease.Fence)
+	if err != nil {
+		t.Fatal(err)
+	}
+	digest, err := store.EnsureArtifact(ctx, turn.ResponseRef, []byte(turn.Step+"\x00"+turn.Evidence))
+	if err != nil || digest != turn.ResponseSHA256 {
+		t.Fatalf("artifact digest=%q result=%q err=%v", digest, turn.ResponseSHA256, err)
+	}
+	reviewID := filesystemadapter.ReviewID("multi-run", "DF-1", 1)
+	if err := store.EnsureReview(ctx, domain.ReviewEvidence{ID: reviewID, ProjectID: "project", IssueID: "DF-1", Status: domain.ReviewApproved, Immutable: true, ArtifactRef: turn.ResponseRef, ArtifactSHA256: digest}); err != nil {
+		t.Fatal(err)
+	}
+	if err := controller.BindReview(ctx, "multi-run", lease.Fence, reviewID); err != nil {
+		t.Fatal(err)
+	}
+	advanced, err := controller.CompleteAndAdvance(ctx, "multi-run", lease.Fence, "approved first issue response")
+	if err != nil || advanced.IssueID != "DF-2" || advanced.Step != "adopted DF-2" {
+		t.Fatalf("advanced=%+v err=%v", advanced, err)
+	}
+
+	secondAgent := memory.NewOpenClaw(memory.Turn{Result: goodTurn()})
+	runCtx, cancel := context.WithCancel(ctx)
+	claims := 0
+	supervisor, err := NewSupervisor(SupervisorOptions{
+		Store: store, Linear: linear, OpenClaw: secondAgent,
+		Claim: func(context.Context, string, string, string) error { claims++; return nil },
+		RunID: "multi-run", ProjectID: "project", IssueID: "DF-1", Holder: "worker", Policy: policy(time.Minute, 2, 2),
+		PollInterval: time.Millisecond, InitialBackoff: time.Millisecond, MaxBackoff: 4 * time.Millisecond,
+		OnPhase: func(name string, _ domain.Run) {
+			if name == "turn_finished" {
+				cancel()
+			}
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := supervisor.Run(runCtx)
+	if err != nil || claims != 0 || len(secondAgent.Requests()) != 1 || secondAgent.Requests()[0].IssueID != "DF-2" || result.CheckpointSequence != 1 {
+		t.Fatalf("run=%+v claims=%d requests=%+v err=%v", result, claims, secondAgent.Requests(), err)
+	}
+}
+
 func TestSupervisorBackoffPreventsBusyLoop(t *testing.T) {
 	rig := newSupervisorRig(t)
 	ctx, cancel := context.WithCancel(context.Background())

@@ -158,16 +158,22 @@ func (s *Supervisor) Run(ctx context.Context) (domain.Run, error) {
 		}
 
 		if run.CheckpointSequence == 0 {
-			claimKey := stableKey("claim", run.ID, run.IssueID)
-			if err := s.options.Claim(ctx, run.ID, run.IssueID, claimKey); err != nil {
-				if sleepErr := s.options.Sleep(ctx, backoff); sleepErr != nil {
-					return s.currentWithoutCanceledContext(), nil
+			// A verified advancement already adopted its frozen next issue remotely.
+			// The durable adopted step is therefore the claim receipt for that issue;
+			// issuing a new, differently keyed claim would correctly conflict with the
+			// adapter's adoption marker.
+			if run.Step != domain.StepAdoptedPrefix+run.IssueID {
+				claimKey := stableKey("claim", run.ID, run.IssueID)
+				if err := s.options.Claim(ctx, run.ID, run.IssueID, claimKey); err != nil {
+					if sleepErr := s.options.Sleep(ctx, backoff); sleepErr != nil {
+						return s.currentWithoutCanceledContext(), nil
+					}
+					backoff = nextBackoff(backoff, s.options.MaxBackoff)
+					continue
 				}
-				backoff = nextBackoff(backoff, s.options.MaxBackoff)
-				continue
+				backoff = s.options.InitialBackoff
+				s.phase("claim_reconciled", run)
 			}
-			backoff = s.options.InitialBackoff
-			s.phase("claim_reconciled", run)
 			_, turnErr := s.controller.ExecuteTurn(ctx, run.ID, fence)
 			run = s.currentWithoutCanceledContext()
 			s.phase("turn_finished", run)
@@ -309,6 +315,18 @@ func sleepContext(ctx context.Context, duration time.Duration) error {
 }
 
 func NewProductionSupervisor(cfg config.Config) (*Supervisor, error) {
+	return NewProductionSupervisorWithHooks(cfg, ProductionHooks{})
+}
+
+type ProductionHooks struct {
+	SQLiteBefore durablesqlite.BeforeCommitHook
+	SQLiteAfter  durablesqlite.AfterCommitHook
+	Filesystem   filesystemadapter.Hook
+	Linear       func(string) error
+	OpenClaw     openclawadapter.Hook
+}
+
+func NewProductionSupervisorWithHooks(cfg config.Config, hooks ProductionHooks) (*Supervisor, error) {
 	if cfg.Mode != "live" {
 		return nil, errors.New("production supervisor requires config mode live")
 	}
@@ -326,7 +344,10 @@ func NewProductionSupervisor(cfg config.Config) (*Supervisor, error) {
 	if err != nil {
 		return nil, err
 	}
-	sqliteStore, err := durablesqlite.Open(cfg.Paths.StateDB)
+	sqliteStore, err := durablesqlite.Open(cfg.Paths.StateDB,
+		durablesqlite.WithBeforeCommitHook(hooks.SQLiteBefore),
+		durablesqlite.WithAfterCommitHook(hooks.SQLiteAfter),
+	)
 	if err != nil {
 		_ = lock.Close()
 		return nil, err
@@ -334,7 +355,7 @@ func NewProductionSupervisor(cfg config.Config) (*Supervisor, error) {
 	store, err := filesystemadapter.Open(filesystemadapter.Options{
 		PacketRoot: cfg.Paths.ReviewRoot, StateRoot: cfg.Paths.StateRoot, WorkspaceRoot: cfg.Paths.WorkspaceRoot,
 		Limits:  filesystemadapter.Limits{MaxMemberBytes: cfg.Limits.MaxArtifactBytes, MaxPacketBytes: cfg.Limits.MaxPacketBytes, MaxMembers: cfg.Limits.MaxArtifacts},
-		Backend: sqliteStore, ExpectedUID: os.Geteuid(),
+		Backend: sqliteStore, ExpectedUID: os.Geteuid(), Hook: hooks.Filesystem,
 	})
 	if err != nil {
 		_ = sqliteStore.Close()
@@ -344,6 +365,7 @@ func NewProductionSupervisor(cfg config.Config) (*Supervisor, error) {
 	linearClient, err := linearadapter.New(linearadapter.Options{
 		Endpoint: cfg.Linear.Endpoint, APIKey: apiKey, TeamID: cfg.Scope.TeamID, ProjectID: cfg.Scope.ProjectID,
 		IssueAllowlist: cfg.Scope.IssueAllowlist, ReadyName: cfg.Lifecycle.Ready, InProgressName: cfg.Lifecycle.InProgress, DoneName: cfg.Lifecycle.Done,
+		Hook: hooks.Linear,
 	})
 	if err != nil {
 		_ = store.Close()
@@ -373,7 +395,7 @@ func NewProductionSupervisor(cfg config.Config) (*Supervisor, error) {
 		Executable: cfg.OpenClaw.Executable, Agent: cfg.OpenClaw.Agent, SessionPrefix: cfg.OpenClaw.SessionPrefix,
 		Timeout: openclawTimeout, ShutdownTimeout: shutdownTimeout, PromptRoot: cfg.Paths.StateRoot,
 		ArtifactRoot: cfg.Paths.ArtifactRoot, MaxOutputBytes: cfg.Limits.MaxOutputBytes, MaxArtifactBytes: cfg.Limits.MaxArtifactBytes, MaxArtifacts: cfg.Limits.MaxArtifacts,
-		StripEnvironment: []string{strings.TrimPrefix(cfg.Linear.APIKey, "env:")},
+		StripEnvironment: []string{strings.TrimPrefix(cfg.Linear.APIKey, "env:")}, Hook: hooks.OpenClaw,
 	})
 	if err != nil {
 		_ = store.Close()

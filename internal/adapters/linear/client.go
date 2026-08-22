@@ -50,6 +50,7 @@ type Options struct {
 	InitialBackoff   time.Duration
 	MaxRetryAfter    time.Duration
 	Sleep            func(context.Context, time.Duration) error
+	Hook             func(string) error
 }
 
 // Client is safe for concurrent use. State-changing reconciliation is serialized so two
@@ -73,6 +74,7 @@ type Client struct {
 	initialBackoff  time.Duration
 	maxRetryAfter   time.Duration
 	sleep           func(context.Context, time.Duration) error
+	hook            func(string) error
 	mutationMu      sync.Mutex
 }
 
@@ -151,8 +153,15 @@ func New(options Options) (*Client, error) {
 		httpClient: &boundedHTTPClient, requestTimeout: options.RequestTimeout, maxRequestBytes: options.MaxRequestBytes,
 		maxBytes: options.MaxResponseBytes, maxPages: options.MaxPages, pageSize: options.PageSize,
 		maxRetries: options.MaxRetries, initialBackoff: options.InitialBackoff,
-		maxRetryAfter: options.MaxRetryAfter, sleep: options.Sleep,
+		maxRetryAfter: options.MaxRetryAfter, sleep: options.Sleep, hook: options.Hook,
 	}, nil
+}
+
+func (c *Client) callHook(phase string) error {
+	if c.hook == nil {
+		return nil
+	}
+	return c.hook(phase)
 }
 
 func loopbackHost(host string) bool {

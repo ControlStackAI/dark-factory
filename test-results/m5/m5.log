@@ -1,0 +1,2146 @@
+=== RUN   TestM5ForcedRestartEndToEnd
+    m5_test.go:166: M5 scenario seed=51001 point=before_linear_claim_comment
+    m5_test.go:166: M5 scenario seed=51001 point=before_checkpoint_committed
+    m5_test.go:166: M5 scenario seed=51002 point=after_linear_remote_receipt
+    m5_test.go:166: M5 scenario seed=51002 point=after_dispatch_started
+    m5_test.go:166: M5 scenario seed=51003 point=after_advance_frozen
+    m5_test.go:166: M5 scenario seed=51003 point=after_linear_complete_comment
+    m5_test.go:166: M5 scenario seed=51004 point=after_linear_claim_state
+    m5_test.go:166: M5 scenario seed=51004 point=after_review_import
+    m5_test.go:166: M5 scenario seed=51005 point=before_consumption_receipt
+    m5_test.go:166: M5 scenario seed=51005 point=before_run_completed
+    m5_test.go:166: M5 scenario seed=51006 point=before_snapshot_install
+    m5_test.go:166: M5 scenario seed=51006 point=after_checkpoint_committed
+    m5_test.go:166: M5 scenario seed=51007 point=after_linear_adopt_comment
+    m5_test.go:166: M5 scenario seed=51007 point=before_linear_adopt_state
+    m5_test.go:166: M5 scenario seed=51008 point=after_review_consumed
+    m5_test.go:166: M5 scenario seed=51008 point=before_attempt_reserved
+    m5_test.go:166: M5 scenario seed=51009 point=after_run_created
+    m5_test.go:166: M5 scenario seed=51009 point=before_agent_result_snapshot
+    m5_test.go:166: M5 scenario seed=51010 point=before_linear_complete_state
+    m5_test.go:166: M5 scenario seed=51010 point=after_agent_result_snapshot
+    m5_test.go:166: M5 scenario seed=51011 point=before_advance_reconciled
+    m5_test.go:166: M5 scenario seed=51011 point=before_lease_acquired
+    m5_test.go:166: M5 scenario seed=51012 point=before_review_consumed
+    m5_test.go:166: M5 scenario seed=51012 point=before_linear_remote_receipt
+    m5_test.go:166: M5 scenario seed=51013 point=after_attempt_reserved
+    m5_test.go:166: M5 scenario seed=51013 point=before_run_created
+    m5_test.go:166: M5 scenario seed=51014 point=before_linear_claim_state
+    m5_test.go:166: M5 scenario seed=51014 point=after_consumption_receipt
+    m5_test.go:166: M5 scenario seed=51015 point=before_linear_complete_comment
+    m5_test.go:166: M5 scenario seed=51015 point=after_lease_acquired
+    m5_test.go:166: M5 scenario seed=51016 point=after_advance_reconciled
+    m5_test.go:166: M5 scenario seed=51016 point=after_linear_claim_comment
+    m5_test.go:166: M5 scenario seed=51017 point=after_linear_adopt_state
+    m5_test.go:166: M5 scenario seed=51017 point=before_dispatch_started
+    m5_test.go:166: M5 scenario seed=51018 point=after_run_completed
+    m5_test.go:166: M5 scenario seed=51018 point=after_linear_complete_state
+    m5_test.go:166: M5 scenario seed=51019 point=before_advance_frozen
+    m5_test.go:166: M5 scenario seed=51019 point=before_linear_adopt_comment
+    m5_test.go:166: M5 scenario seed=51020 point=after_linear_complete_comment
+    m5_test.go:166: M5 scenario seed=51020 point=after_attempt_reserved
+    m5_test.go:196: M5_MATRIX_RECEIPT {
+          "generated_at": "2026-08-22T17:51:57.22718392Z",
+          "command": "go test -race ./internal/e2e -run TestM5ForcedRestartEndToEnd -count=1 -v",
+          "seed_count": 20,
+          "seeds": [
+            51001,
+            51002,
+            51003,
+            51004,
+            51005,
+            51006,
+            51007,
+            51008,
+            51009,
+            51010,
+            51011,
+            51012,
+            51013,
+            51014,
+            51015,
+            51016,
+            51017,
+            51018,
+            51019,
+            51020
+          ],
+          "boundary_count": 19,
+          "scenario_count": 40,
+          "before_count": 19,
+          "after_count": 21,
+          "complete": 33,
+          "blocked": 7,
+          "scenarios": [
+            {
+              "seed": 51001,
+              "spec": {
+                "boundary": {
+                  "name": "Linear claim comment",
+                  "before": "before_linear_claim_comment",
+                  "after": "after_linear_claim_comment",
+                  "remote_key": "comment:issue-m5-1:started"
+                },
+                "side": "before",
+                "point": "before_linear_claim_comment"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2548217,
+              "final_daemon_pid": 2548227,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1366696760
+            },
+            {
+              "seed": 51001,
+              "spec": {
+                "boundary": {
+                  "name": "checkpoint",
+                  "before": "before_checkpoint_committed",
+                  "after": "after_checkpoint_committed",
+                  "journal_phase": "checkpoint_committed"
+                },
+                "side": "before",
+                "point": "before_checkpoint_committed"
+              },
+              "status": "blocked",
+              "attempts": 1,
+              "fences": [
+                1
+              ],
+              "journal_counts": {
+                "attempt_reserved": 1,
+                "dispatch_recorded": 1,
+                "dispatch_started": 1,
+                "lease_acquired": 1,
+                "run_blocked": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:started": 1,
+                "state:issue-m5-1:state-started": 1
+              },
+              "packet_count": 0,
+              "snapshot_count": 0,
+              "receipt_count": 0,
+              "openclaw_processes": 1,
+              "quick_check": "ok",
+              "fault_pid": 2548604,
+              "final_daemon_pid": 2548619,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-started",
+                "issue-m5-2": "state-ready"
+              },
+              "duration_ns": 244808509
+            },
+            {
+              "seed": 51002,
+              "spec": {
+                "boundary": {
+                  "name": "Linear remote receipt",
+                  "before": "before_linear_remote_receipt",
+                  "after": "after_linear_remote_receipt"
+                },
+                "side": "after",
+                "point": "after_linear_remote_receipt"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2548642,
+              "final_daemon_pid": 2548801,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1095984203
+            },
+            {
+              "seed": 51002,
+              "spec": {
+                "boundary": {
+                  "name": "dispatch start",
+                  "before": "before_dispatch_started",
+                  "after": "after_dispatch_started",
+                  "journal_phase": "dispatch_started"
+                },
+                "side": "after",
+                "point": "after_dispatch_started"
+              },
+              "status": "blocked",
+              "attempts": 1,
+              "fences": [
+                1
+              ],
+              "journal_counts": {
+                "attempt_reserved": 1,
+                "dispatch_recorded": 1,
+                "dispatch_started": 1,
+                "lease_acquired": 1,
+                "run_blocked": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:started": 1,
+                "state:issue-m5-1:state-started": 1
+              },
+              "packet_count": 0,
+              "snapshot_count": 0,
+              "receipt_count": 0,
+              "openclaw_processes": 0,
+              "quick_check": "ok",
+              "fault_pid": 2549000,
+              "final_daemon_pid": 2549010,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-started",
+                "issue-m5-2": "state-ready"
+              },
+              "duration_ns": 219890701
+            },
+            {
+              "seed": 51003,
+              "spec": {
+                "boundary": {
+                  "name": "advancement freeze",
+                  "before": "before_advance_frozen",
+                  "after": "after_advance_frozen",
+                  "journal_phase": "advance_frozen"
+                },
+                "side": "after",
+                "point": "after_advance_frozen"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2549043,
+              "final_daemon_pid": 2549185,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1175557597
+            },
+            {
+              "seed": 51003,
+              "spec": {
+                "boundary": {
+                  "name": "Linear completion comment",
+                  "before": "before_linear_complete_comment",
+                  "after": "after_linear_complete_comment",
+                  "remote_key": "comment:issue-m5-1:completed"
+                },
+                "side": "after",
+                "point": "after_linear_complete_comment"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2549398,
+              "final_daemon_pid": 2549535,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1146518715
+            },
+            {
+              "seed": 51004,
+              "spec": {
+                "boundary": {
+                  "name": "Linear claim state",
+                  "before": "before_linear_claim_state",
+                  "after": "after_linear_claim_state",
+                  "remote_key": "state:issue-m5-1:state-started"
+                },
+                "side": "after",
+                "point": "after_linear_claim_state"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2549741,
+              "final_daemon_pid": 2549750,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1387426124
+            },
+            {
+              "seed": 51004,
+              "spec": {
+                "boundary": {
+                  "name": "review import",
+                  "before": "before_snapshot_install",
+                  "after": "after_review_import",
+                  "artifact": "snapshot"
+                },
+                "side": "after",
+                "point": "after_review_import"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2550075,
+              "final_daemon_pid": 2550212,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1163765128
+            },
+            {
+              "seed": 51005,
+              "spec": {
+                "boundary": {
+                  "name": "review consumption receipt",
+                  "before": "before_consumption_receipt",
+                  "after": "after_consumption_receipt",
+                  "artifact": "receipt"
+                },
+                "side": "before",
+                "point": "before_consumption_receipt"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2550446,
+              "final_daemon_pid": 2550632,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1160957676
+            },
+            {
+              "seed": 51005,
+              "spec": {
+                "boundary": {
+                  "name": "completion",
+                  "before": "before_run_completed",
+                  "after": "after_run_completed",
+                  "journal_phase": "run_completed"
+                },
+                "side": "before",
+                "point": "before_run_completed"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2550818,
+              "final_daemon_pid": 2551094,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1140378338
+            },
+            {
+              "seed": 51006,
+              "spec": {
+                "boundary": {
+                  "name": "review import",
+                  "before": "before_snapshot_install",
+                  "after": "after_review_import",
+                  "artifact": "snapshot"
+                },
+                "side": "before",
+                "point": "before_snapshot_install"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2551159,
+              "final_daemon_pid": 2551294,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1312798611
+            },
+            {
+              "seed": 51006,
+              "spec": {
+                "boundary": {
+                  "name": "checkpoint",
+                  "before": "before_checkpoint_committed",
+                  "after": "after_checkpoint_committed",
+                  "journal_phase": "checkpoint_committed"
+                },
+                "side": "after",
+                "point": "after_checkpoint_committed"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2551575,
+              "final_daemon_pid": 2551590,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1358310374
+            },
+            {
+              "seed": 51007,
+              "spec": {
+                "boundary": {
+                  "name": "Linear adoption comment",
+                  "before": "before_linear_adopt_comment",
+                  "after": "after_linear_adopt_comment",
+                  "remote_key": "comment:issue-m5-2:started"
+                },
+                "side": "after",
+                "point": "after_linear_adopt_comment"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2551924,
+              "final_daemon_pid": 2552065,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1142400297
+            },
+            {
+              "seed": 51007,
+              "spec": {
+                "boundary": {
+                  "name": "Linear adoption state",
+                  "before": "before_linear_adopt_state",
+                  "after": "after_linear_adopt_state",
+                  "remote_key": "state:issue-m5-2:state-started"
+                },
+                "side": "before",
+                "point": "before_linear_adopt_state"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2552294,
+              "final_daemon_pid": 2552436,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1099225846
+            },
+            {
+              "seed": 51008,
+              "spec": {
+                "boundary": {
+                  "name": "review consume",
+                  "before": "before_review_consumed",
+                  "after": "after_review_consumed",
+                  "journal_phase": "review_consumed"
+                },
+                "side": "after",
+                "point": "after_review_consumed"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2552649,
+              "final_daemon_pid": 2552786,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1140124097
+            },
+            {
+              "seed": 51008,
+              "spec": {
+                "boundary": {
+                  "name": "attempt reserve",
+                  "before": "before_attempt_reserved",
+                  "after": "after_attempt_reserved",
+                  "journal_phase": "attempt_reserved"
+                },
+                "side": "before",
+                "point": "before_attempt_reserved"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2553048,
+              "final_daemon_pid": 2553057,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1362270172
+            },
+            {
+              "seed": 51009,
+              "spec": {
+                "boundary": {
+                  "name": "run create",
+                  "before": "before_run_created",
+                  "after": "after_run_created",
+                  "journal_phase": "run_created"
+                },
+                "side": "after",
+                "point": "after_run_created"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 1,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2553380,
+              "final_daemon_pid": 2553390,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 914465854
+            },
+            {
+              "seed": 51009,
+              "spec": {
+                "boundary": {
+                  "name": "agent result snapshot",
+                  "before": "before_agent_result_snapshot",
+                  "after": "after_agent_result_snapshot",
+                  "artifact": "openclaw"
+                },
+                "side": "before",
+                "point": "before_agent_result_snapshot"
+              },
+              "status": "blocked",
+              "attempts": 1,
+              "fences": [
+                1
+              ],
+              "journal_counts": {
+                "attempt_reserved": 1,
+                "dispatch_recorded": 1,
+                "dispatch_started": 1,
+                "lease_acquired": 1,
+                "run_blocked": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:started": 1,
+                "state:issue-m5-1:state-started": 1
+              },
+              "packet_count": 0,
+              "snapshot_count": 0,
+              "receipt_count": 0,
+              "openclaw_processes": 1,
+              "quick_check": "ok",
+              "fault_pid": 2553731,
+              "final_daemon_pid": 2553748,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-started",
+                "issue-m5-2": "state-ready"
+              },
+              "duration_ns": 230813827
+            },
+            {
+              "seed": 51010,
+              "spec": {
+                "boundary": {
+                  "name": "Linear completion state",
+                  "before": "before_linear_complete_state",
+                  "after": "after_linear_complete_state",
+                  "remote_key": "state:issue-m5-1:state-done"
+                },
+                "side": "before",
+                "point": "before_linear_complete_state"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2553781,
+              "final_daemon_pid": 2553922,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1177126585
+            },
+            {
+              "seed": 51010,
+              "spec": {
+                "boundary": {
+                  "name": "agent result snapshot",
+                  "before": "before_agent_result_snapshot",
+                  "after": "after_agent_result_snapshot",
+                  "artifact": "openclaw"
+                },
+                "side": "after",
+                "point": "after_agent_result_snapshot"
+              },
+              "status": "blocked",
+              "attempts": 1,
+              "fences": [
+                1
+              ],
+              "journal_counts": {
+                "attempt_reserved": 1,
+                "dispatch_recorded": 1,
+                "dispatch_started": 1,
+                "lease_acquired": 1,
+                "run_blocked": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:started": 1,
+                "state:issue-m5-1:state-started": 1
+              },
+              "packet_count": 0,
+              "snapshot_count": 0,
+              "receipt_count": 0,
+              "openclaw_processes": 1,
+              "quick_check": "ok",
+              "fault_pid": 2554124,
+              "final_daemon_pid": 2554143,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-started",
+                "issue-m5-2": "state-ready"
+              },
+              "duration_ns": 232041352
+            },
+            {
+              "seed": 51011,
+              "spec": {
+                "boundary": {
+                  "name": "local reconcile",
+                  "before": "before_advance_reconciled",
+                  "after": "after_advance_reconciled",
+                  "journal_phase": "advance_reconciled"
+                },
+                "side": "before",
+                "point": "before_advance_reconciled"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2554163,
+              "final_daemon_pid": 2554301,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1097817669
+            },
+            {
+              "seed": 51011,
+              "spec": {
+                "boundary": {
+                  "name": "lease acquire",
+                  "before": "before_lease_acquired",
+                  "after": "after_lease_acquired",
+                  "journal_phase": "lease_acquired"
+                },
+                "side": "before",
+                "point": "before_lease_acquired"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 1,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2554515,
+              "final_daemon_pid": 2554525,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 889759356
+            },
+            {
+              "seed": 51012,
+              "spec": {
+                "boundary": {
+                  "name": "review consume",
+                  "before": "before_review_consumed",
+                  "after": "after_review_consumed",
+                  "journal_phase": "review_consumed"
+                },
+                "side": "before",
+                "point": "before_review_consumed"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2554850,
+              "final_daemon_pid": 2554986,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1175736822
+            },
+            {
+              "seed": 51012,
+              "spec": {
+                "boundary": {
+                  "name": "Linear remote receipt",
+                  "before": "before_linear_remote_receipt",
+                  "after": "after_linear_remote_receipt"
+                },
+                "side": "before",
+                "point": "before_linear_remote_receipt"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2555255,
+              "final_daemon_pid": 2555393,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1092924856
+            },
+            {
+              "seed": 51013,
+              "spec": {
+                "boundary": {
+                  "name": "attempt reserve",
+                  "before": "before_attempt_reserved",
+                  "after": "after_attempt_reserved",
+                  "journal_phase": "attempt_reserved"
+                },
+                "side": "after",
+                "point": "after_attempt_reserved"
+              },
+              "status": "blocked",
+              "attempts": 1,
+              "fences": [
+                1
+              ],
+              "journal_counts": {
+                "attempt_reserved": 1,
+                "dispatch_recorded": 1,
+                "lease_acquired": 1,
+                "run_blocked": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:started": 1,
+                "state:issue-m5-1:state-started": 1
+              },
+              "packet_count": 0,
+              "snapshot_count": 0,
+              "receipt_count": 0,
+              "openclaw_processes": 0,
+              "quick_check": "ok",
+              "fault_pid": 2555600,
+              "final_daemon_pid": 2555610,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-started",
+                "issue-m5-2": "state-ready"
+              },
+              "duration_ns": 215225001
+            },
+            {
+              "seed": 51013,
+              "spec": {
+                "boundary": {
+                  "name": "run create",
+                  "before": "before_run_created",
+                  "after": "after_run_created",
+                  "journal_phase": "run_created"
+                },
+                "side": "before",
+                "point": "before_run_created"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 1,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2555651,
+              "final_daemon_pid": 2555660,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 909128814
+            },
+            {
+              "seed": 51014,
+              "spec": {
+                "boundary": {
+                  "name": "Linear claim state",
+                  "before": "before_linear_claim_state",
+                  "after": "after_linear_claim_state",
+                  "remote_key": "state:issue-m5-1:state-started"
+                },
+                "side": "before",
+                "point": "before_linear_claim_state"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2555989,
+              "final_daemon_pid": 2555999,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1343324252
+            },
+            {
+              "seed": 51014,
+              "spec": {
+                "boundary": {
+                  "name": "review consumption receipt",
+                  "before": "before_consumption_receipt",
+                  "after": "after_consumption_receipt",
+                  "artifact": "receipt"
+                },
+                "side": "after",
+                "point": "after_consumption_receipt"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2556325,
+              "final_daemon_pid": 2556463,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1191302619
+            },
+            {
+              "seed": 51015,
+              "spec": {
+                "boundary": {
+                  "name": "Linear completion comment",
+                  "before": "before_linear_complete_comment",
+                  "after": "after_linear_complete_comment",
+                  "remote_key": "comment:issue-m5-1:completed"
+                },
+                "side": "before",
+                "point": "before_linear_complete_comment"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2556695,
+              "final_daemon_pid": 2556831,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1154992217
+            },
+            {
+              "seed": 51015,
+              "spec": {
+                "boundary": {
+                  "name": "lease acquire",
+                  "before": "before_lease_acquired",
+                  "after": "after_lease_acquired",
+                  "journal_phase": "lease_acquired"
+                },
+                "side": "after",
+                "point": "after_lease_acquired"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2557036,
+              "final_daemon_pid": 2557046,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1405366414
+            },
+            {
+              "seed": 51016,
+              "spec": {
+                "boundary": {
+                  "name": "local reconcile",
+                  "before": "before_advance_reconciled",
+                  "after": "after_advance_reconciled",
+                  "journal_phase": "advance_reconciled"
+                },
+                "side": "after",
+                "point": "after_advance_reconciled"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2557847,
+              "final_daemon_pid": 2558114,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1029191431
+            },
+            {
+              "seed": 51016,
+              "spec": {
+                "boundary": {
+                  "name": "Linear claim comment",
+                  "before": "before_linear_claim_comment",
+                  "after": "after_linear_claim_comment",
+                  "remote_key": "comment:issue-m5-1:started"
+                },
+                "side": "after",
+                "point": "after_linear_claim_comment"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2558713,
+              "final_daemon_pid": 2558740,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1380634057
+            },
+            {
+              "seed": 51017,
+              "spec": {
+                "boundary": {
+                  "name": "Linear adoption state",
+                  "before": "before_linear_adopt_state",
+                  "after": "after_linear_adopt_state",
+                  "remote_key": "state:issue-m5-2:state-started"
+                },
+                "side": "after",
+                "point": "after_linear_adopt_state"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2559381,
+              "final_daemon_pid": 2559550,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1111532593
+            },
+            {
+              "seed": 51017,
+              "spec": {
+                "boundary": {
+                  "name": "dispatch start",
+                  "before": "before_dispatch_started",
+                  "after": "after_dispatch_started",
+                  "journal_phase": "dispatch_started"
+                },
+                "side": "before",
+                "point": "before_dispatch_started"
+              },
+              "status": "blocked",
+              "attempts": 1,
+              "fences": [
+                1
+              ],
+              "journal_counts": {
+                "attempt_reserved": 1,
+                "dispatch_recorded": 1,
+                "lease_acquired": 1,
+                "run_blocked": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:started": 1,
+                "state:issue-m5-1:state-started": 1
+              },
+              "packet_count": 0,
+              "snapshot_count": 0,
+              "receipt_count": 0,
+              "openclaw_processes": 0,
+              "quick_check": "ok",
+              "fault_pid": 2559745,
+              "final_daemon_pid": 2559769,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-started",
+                "issue-m5-2": "state-ready"
+              },
+              "duration_ns": 219722658
+            },
+            {
+              "seed": 51018,
+              "spec": {
+                "boundary": {
+                  "name": "completion",
+                  "before": "before_run_completed",
+                  "after": "after_run_completed",
+                  "journal_phase": "run_completed"
+                },
+                "side": "after",
+                "point": "after_run_completed"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 1,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2559790,
+              "final_daemon_pid": 2560055,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 934276093
+            },
+            {
+              "seed": 51018,
+              "spec": {
+                "boundary": {
+                  "name": "Linear completion state",
+                  "before": "before_linear_complete_state",
+                  "after": "after_linear_complete_state",
+                  "remote_key": "state:issue-m5-1:state-done"
+                },
+                "side": "after",
+                "point": "after_linear_complete_state"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2560127,
+              "final_daemon_pid": 2560270,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1155618955
+            },
+            {
+              "seed": 51019,
+              "spec": {
+                "boundary": {
+                  "name": "advancement freeze",
+                  "before": "before_advance_frozen",
+                  "after": "after_advance_frozen",
+                  "journal_phase": "advance_frozen"
+                },
+                "side": "before",
+                "point": "before_advance_frozen"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2560476,
+              "final_daemon_pid": 2560612,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1177563832
+            },
+            {
+              "seed": 51019,
+              "spec": {
+                "boundary": {
+                  "name": "Linear adoption comment",
+                  "before": "before_linear_adopt_comment",
+                  "after": "after_linear_adopt_comment",
+                  "remote_key": "comment:issue-m5-2:started"
+                },
+                "side": "before",
+                "point": "before_linear_adopt_comment"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2560830,
+              "final_daemon_pid": 2560970,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1145982736
+            },
+            {
+              "seed": 51020,
+              "spec": {
+                "boundary": {
+                  "name": "Linear completion comment",
+                  "before": "before_linear_complete_comment",
+                  "after": "after_linear_complete_comment",
+                  "remote_key": "comment:issue-m5-1:completed"
+                },
+                "side": "after",
+                "point": "after_linear_complete_comment"
+              },
+              "status": "complete",
+              "attempts": 2,
+              "fences": [
+                1,
+                2
+              ],
+              "journal_counts": {
+                "advance_frozen": 2,
+                "advance_reconciled": 2,
+                "attempt_reserved": 2,
+                "checkpoint_committed": 2,
+                "dispatch_recorded": 2,
+                "dispatch_started": 2,
+                "lease_acquired": 2,
+                "review_bound": 2,
+                "review_consumed": 2,
+                "run_completed": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:completed": 1,
+                "comment:issue-m5-1:started": 1,
+                "comment:issue-m5-2:completed": 1,
+                "comment:issue-m5-2:started": 1,
+                "state:issue-m5-1:state-done": 1,
+                "state:issue-m5-1:state-started": 1,
+                "state:issue-m5-2:state-done": 1,
+                "state:issue-m5-2:state-started": 1
+              },
+              "packet_count": 2,
+              "snapshot_count": 2,
+              "receipt_count": 2,
+              "openclaw_processes": 2,
+              "quick_check": "ok",
+              "fault_pid": 2561221,
+              "final_daemon_pid": 2561363,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-done",
+                "issue-m5-2": "state-done"
+              },
+              "duration_ns": 1158184102
+            },
+            {
+              "seed": 51020,
+              "spec": {
+                "boundary": {
+                  "name": "attempt reserve",
+                  "before": "before_attempt_reserved",
+                  "after": "after_attempt_reserved",
+                  "journal_phase": "attempt_reserved"
+                },
+                "side": "after",
+                "point": "after_attempt_reserved"
+              },
+              "status": "blocked",
+              "attempts": 1,
+              "fences": [
+                1
+              ],
+              "journal_counts": {
+                "attempt_reserved": 1,
+                "dispatch_recorded": 1,
+                "lease_acquired": 1,
+                "run_blocked": 1,
+                "run_created": 1
+              },
+              "remote_mutation_counts": {
+                "comment:issue-m5-1:started": 1,
+                "state:issue-m5-1:state-started": 1
+              },
+              "packet_count": 0,
+              "snapshot_count": 0,
+              "receipt_count": 0,
+              "openclaw_processes": 0,
+              "quick_check": "ok",
+              "fault_pid": 2561568,
+              "final_daemon_pid": 2561583,
+              "final_remote_issue_state": {
+                "issue-m5-1": "state-started",
+                "issue-m5-2": "state-ready"
+              },
+              "duration_ns": 212260943
+            }
+          ]
+        }
+--- PASS: TestM5ForcedRestartEndToEnd (80.91s)
+PASS
+ok  	github.com/ControlStackAI/dark-factory/internal/e2e	81.922s

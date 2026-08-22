@@ -76,6 +76,31 @@ func TestExecutorArgvPromptIsolationAndArtifact(t *testing.T) {
 	}
 }
 
+func TestAgentResultSnapshotHooksBracketDurableArtifact(t *testing.T) {
+	rig := newExecutorRig(t, 8192, 2*time.Second)
+	var phases []string
+	rig.executor.options.Hook = func(phase string) error {
+		phases = append(phases, phase)
+		entries, err := os.ReadDir(rig.artifactRoot)
+		if err != nil {
+			return err
+		}
+		if phase == "before_agent_result_snapshot" && len(entries) != 0 {
+			t.Fatalf("artifact existed before snapshot: %v", entries)
+		}
+		if phase == "after_agent_result_snapshot" && len(entries) != 1 {
+			t.Fatalf("durable artifact absent after snapshot: %v", entries)
+		}
+		return nil
+	}
+	if _, err := rig.executor.ExecuteTurn(context.Background(), request(1, 1)); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(phases, []string{"before_agent_result_snapshot", "after_agent_result_snapshot"}) {
+		t.Fatalf("snapshot phases=%v", phases)
+	}
+}
+
 func TestExecutorFailureMatrixIsBoundedAndRedacted(t *testing.T) {
 	tests := []struct {
 		name, scenario, wantKind string

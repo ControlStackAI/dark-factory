@@ -140,6 +140,22 @@ Deterministic after-commit hooks test each persisted controller and advancement 
 returning an error only after the transaction is durable, modeling abrupt termination at the
 point of maximum ambiguity.
 
+M5 extends this proof through the release process boundary. A dedicated test build tag wires
+the existing SQLite and filesystem hooks plus named OpenClaw-snapshot and Linear-suboperation
+hooks into `factoryd`; ordinary builds compile a zero-hook implementation. The injected daemon
+fsyncs a one-shot phase/PID witness and stops itself at the exact boundary. The harness observes
+that witness, sends `SIGKILL`, proves the old PID is gone, and launches a new daemon over the
+same database, packet, artifact, and receipt roots. Fault placement therefore depends on an
+observable named phase rather than a scheduling sleep.
+
+The retained matrix covers before-commit and after-durable-commit-before-acknowledgement for
+run creation, lease acquisition, attempt reservation, dispatch start, response snapshot,
+checkpoint, review import/consumption/receipt, advancement freeze, all claim/completion/adoption
+comment and state mutations, verified remote receipt, local reconciliation, and completion.
+Each scenario runs SQLite integrity/cardinality inspection, fake-Linear audit comparison,
+strict fence/attempt/review/selection invariants, child-process inspection, and independent
+packet re-verification before its receipt is accepted.
+
 ## M3 execution and supervision
 
 The production OpenClaw adapter invokes the configured executable directly, never through a

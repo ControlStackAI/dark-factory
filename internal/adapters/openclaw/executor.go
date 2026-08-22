@@ -27,6 +27,7 @@ import (
 const resultVersion = 1
 
 type PromptBuilder func(domain.TurnRequest) (string, error)
+type Hook func(string) error
 
 type Options struct {
 	Executable       string
@@ -41,6 +42,7 @@ type Options struct {
 	MaxArtifacts     int
 	PromptBuilder    PromptBuilder
 	StripEnvironment []string
+	Hook             Hook
 }
 
 type Executor struct {
@@ -172,9 +174,19 @@ func (e *Executor) ExecuteTurn(ctx context.Context, request domain.TurnRequest) 
 	}
 
 	response := stdout.Bytes()
+	if e.options.Hook != nil {
+		if err := e.options.Hook("before_agent_result_snapshot"); err != nil {
+			return domain.TurnResult{}, err
+		}
+	}
 	responseRef, responseDigest, err := snapshotResponse(e.options.ArtifactRoot, request, sessionKey, response, e.options.MaxArtifactBytes, e.options.MaxArtifacts)
 	if err != nil {
 		return domain.TurnResult{}, fmt.Errorf("snapshot OpenClaw response: %w", err)
+	}
+	if e.options.Hook != nil {
+		if err := e.options.Hook("after_agent_result_snapshot"); err != nil {
+			return domain.TurnResult{}, err
+		}
 	}
 	parsed, err := parseResponse(response)
 	if err != nil {

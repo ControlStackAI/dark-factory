@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -204,7 +205,9 @@ func (c *Config) Validate(base string) error {
 		add(!strings.ContainsRune(value, 0), field+" contains a NUL byte")
 	}
 	endpoint, err := url.Parse(c.Linear.Endpoint)
-	add(err == nil && endpoint.Scheme == "https" && endpoint.Host != "" && endpoint.User == nil, "linear.endpoint must be an HTTPS URL without user information")
+	validEndpoint := err == nil && endpoint.Host != "" && endpoint.User == nil && endpoint.Fragment == "" &&
+		(endpoint.Scheme == "https" || endpoint.Scheme == "http" && configLoopbackHost(endpoint.Hostname()))
+	add(validEndpoint, "linear.endpoint must be HTTPS (or loopback HTTP for tests) without user information or fragments")
 	add(validSecretRef(c.Linear.APIKey), "linear.api_key must be an env:NAME reference")
 	add(!c.OpenClaw.Delivery, "openclaw.delivery must be false; delivery is disabled")
 	add(!strings.ContainsAny(c.OpenClaw.Executable, "\r\n"), "openclaw.executable contains a newline")
@@ -339,6 +342,10 @@ func (c *Config) Validate(base string) error {
 		return errors.New(strings.Join(problems, "; "))
 	}
 	return nil
+}
+
+func configLoopbackHost(host string) bool {
+	return host == "localhost" || net.ParseIP(host) != nil && net.ParseIP(host).IsLoopback()
 }
 
 func ResolveSecret(ref string) (string, error) {

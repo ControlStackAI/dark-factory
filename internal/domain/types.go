@@ -150,3 +150,7 @@ type AdvanceRequest struct {
 	Fence          uint64
 	IdempotencyKey string
 }
+
+// StepAdoptedPrefix is the durable prefix set on a run step when a verified
+// advancement adopts a frozen next issue remotely.
+const StepAdoptedPrefix = "adopted "

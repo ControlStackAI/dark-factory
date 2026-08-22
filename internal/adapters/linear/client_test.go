@@ -571,6 +571,25 @@ func TestClaimIdempotentAndTimeoutReconciliation(t *testing.T) {
 	}
 }
 
+func TestMutationHooksBracketEachRemoteClaimCommit(t *testing.T) {
+	f := newStateFake(t)
+	var phases []string
+	client := testClient(t, f.server.URL, f.server.Client(), func(o *Options) {
+		o.PageSize = 100
+		o.Hook = func(phase string) error {
+			phases = append(phases, phase)
+			return nil
+		}
+	})
+	if err := client.Claim(context.Background(), ClaimRequest{RunID: "run-1", IssueID: "next", IdempotencyKey: "claim-key"}); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"before_linear_claim_comment", "after_linear_claim_comment", "before_linear_claim_state", "after_linear_claim_state"}
+	if !reflect.DeepEqual(phases, want) {
+		t.Fatalf("claim hook phases=%v want=%v", phases, want)
+	}
+}
+
 func TestMutationAllowlistPreflightRefusesWithoutNetwork(t *testing.T) {
 	f := newQueueFake(t)
 	client := testClient(t, f.server.URL, f.server.Client(), func(o *Options) { o.IssueAllowlist = []string{"current"} })

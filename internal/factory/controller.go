@@ -459,7 +459,7 @@ func (c *Controller) CompleteAndAdvance(ctx context.Context, runID string, fence
 			return nil
 		}
 		current.IssueID = pending.NextIssueID
-		current.Step = "adopted " + pending.NextIssueID
+		current.Step = domain.StepAdoptedPrefix + pending.NextIssueID
 		current.CheckpointSequence = 0
 		return nil
 	})

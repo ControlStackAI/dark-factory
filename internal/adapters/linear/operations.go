@@ -425,24 +425,32 @@ func (c *Client) Claim(ctx context.Context, request ClaimRequest) error {
 	if blocked {
 		return fmt.Errorf("%w: frozen claim issue became blocked before adoption", ports.ErrInvalidTransition)
 	}
-	if err := c.ensureComment(ctx, issue, claimIntent, "Dark Factory claimed this frozen Ready issue before agent execution."); err != nil {
+	if err := c.ensureComment(ctx, issue, claimIntent, "Dark Factory claimed this frozen Ready issue before agent execution.", "linear_claim_comment"); err != nil {
 		return err
 	}
 	issue, err = c.getRemoteIssue(ctx, issue.ID)
 	if err != nil {
 		return err
 	}
-	return c.updateStateReconciled(ctx, issue, states.inProgress)
+	return c.updateStateReconciled(ctx, issue, states.inProgress, "linear_claim_state")
 }
 
-func (c *Client) updateStateReconciled(ctx context.Context, issue remoteIssue, desired remoteState) error {
+func (c *Client) updateStateReconciled(ctx context.Context, issue remoteIssue, desired remoteState, phase string) error {
 	var data struct {
 		IssueUpdate struct {
 			Success bool        `json:"success"`
 			Issue   remoteIssue `json:"issue"`
 		} `json:"issueUpdate"`
 	}
+	if err := c.callHook("before_" + phase); err != nil {
+		return err
+	}
 	err := c.mutate(ctx, "DarkFactoryUpdateIssue", updateMutation, map[string]any{"id": issue.ID, "input": map[string]any{"stateId": desired.ID}}, &data)
+	if err == nil {
+		if hookErr := c.callHook("after_" + phase); hookErr != nil {
+			return hookErr
+		}
+	}
 	if err == nil {
 		if !data.IssueUpdate.Success {
 			return errors.New("Linear issue state mutation reported failure")
@@ -564,7 +572,7 @@ func inspectComments(bodies []string, intended commentIntent) (bool, error) {
 	return exact == 1, nil
 }
 
-func (c *Client) ensureComment(ctx context.Context, issue remoteIssue, intended commentIntent, text string) error {
+func (c *Client) ensureComment(ctx context.Context, issue remoteIssue, intended commentIntent, text, phase string) error {
 	bodies, err := c.listComments(ctx, issue)
 	if err != nil {
 		return err
@@ -582,7 +590,15 @@ func (c *Client) ensureComment(ctx context.Context, issue remoteIssue, intended 
 			} `json:"comment"`
 		} `json:"commentCreate"`
 	}
+	if err := c.callHook("before_" + phase); err != nil {
+		return err
+	}
 	mutationErr := c.mutate(ctx, "DarkFactoryCreateComment", commentMutation, map[string]any{"input": map[string]any{"issueId": issue.ID, "body": body}}, &data)
+	if mutationErr == nil {
+		if hookErr := c.callHook("after_" + phase); hookErr != nil {
+			return hookErr
+		}
+	}
 	if mutationErr == nil && (!data.CommentCreate.Success || data.CommentCreate.Comment.ID == "") {
 		mutationErr = errors.New("Linear comment mutation reported failure")
 	}
@@ -659,14 +675,14 @@ func (c *Client) Advance(ctx context.Context, request domain.AdvanceRequest) err
 		if current.State.ID != states.inProgress.ID {
 			return fmt.Errorf("%w: current issue is neither resolved In Progress nor Done", ports.ErrInvalidTransition)
 		}
-		if err := c.ensureComment(ctx, current, completeIntent, "Dark Factory completion evidence digest: sha256:"+evidenceDigest+" (review "+request.ReviewID+")"); err != nil {
+		if err := c.ensureComment(ctx, current, completeIntent, "Dark Factory completion evidence digest: sha256:"+evidenceDigest+" (review "+request.ReviewID+")", "linear_complete_comment"); err != nil {
 			return err
 		}
 		current, err = c.getRemoteIssue(ctx, current.ID)
 		if err != nil {
 			return err
 		}
-		if err := c.updateStateReconciled(ctx, current, states.done); err != nil {
+		if err := c.updateStateReconciled(ctx, current, states.done, "linear_complete_state"); err != nil {
 			return err
 		}
 	}
@@ -688,19 +704,25 @@ func (c *Client) Advance(ctx context.Context, request domain.AdvanceRequest) err
 			if next.State.ID != states.ready.ID {
 				return fmt.Errorf("%w: frozen next issue is neither resolved Ready nor In Progress", ports.ErrInvalidTransition)
 			}
-			if err := c.ensureComment(ctx, next, adoptIntent, "Dark Factory adopted this frozen next issue after "+current.Identifier+"."); err != nil {
+			if err := c.ensureComment(ctx, next, adoptIntent, "Dark Factory adopted this frozen next issue after "+current.Identifier+".", "linear_adopt_comment"); err != nil {
 				return err
 			}
 			next, err = c.getRemoteIssue(ctx, next.ID)
 			if err != nil {
 				return err
 			}
-			if err := c.updateStateReconciled(ctx, next, states.inProgress); err != nil {
+			if err := c.updateStateReconciled(ctx, next, states.inProgress, "linear_adopt_state"); err != nil {
 				return err
 			}
 		}
 	}
-	return c.verifyAdvance(ctx, request, states, completeIntent)
+	if err := c.callHook("before_linear_remote_receipt"); err != nil {
+		return err
+	}
+	if err := c.verifyAdvance(ctx, request, states, completeIntent); err != nil {
+		return err
+	}
+	return c.callHook("after_linear_remote_receipt")
 }
 
 func (c *Client) verifyAdvance(ctx context.Context, request domain.AdvanceRequest, states lifecycle, completeIntent commentIntent) error {
