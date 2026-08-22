@@ -9,11 +9,13 @@ import (
 	"path/filepath"
 	"strings"
 
+	durablesqlite "github.com/ControlStackAI/dark-factory/internal/adapters/sqlite"
 	"github.com/ControlStackAI/dark-factory/internal/config"
 	"github.com/ControlStackAI/dark-factory/internal/domain"
+	"github.com/ControlStackAI/dark-factory/internal/ports"
 )
 
-var ErrLiveAdaptersUnavailable = errors.New("live execution is not implemented until M2/M3; no external action was taken")
+var ErrLiveAdaptersUnavailable = errors.New("live execution requires the factoryd foreground supervisor; no external action was taken")
 
 type Operator struct{ Config config.Config }
 
@@ -35,9 +37,10 @@ type ValidationReport struct {
 }
 
 type StatusReport struct {
-	Database string `json:"database"`
-	Status   string `json:"status"`
-	Message  string `json:"message"`
+	Database string           `json:"database"`
+	Status   string           `json:"status"`
+	Message  string           `json:"message"`
+	Run      *StatusRunReport `json:"run,omitempty"`
 }
 
 type RunReport struct {
@@ -48,6 +51,15 @@ type RunReport struct {
 	Step      string           `json:"step"`
 	Attempts  int              `json:"attempts"`
 	Evidence  []string         `json:"evidence"`
+}
+
+type StatusRunReport struct {
+	RunReport
+	Fence              uint64 `json:"fence"`
+	CheckpointSequence uint64 `json:"checkpoint_sequence"`
+	BlockedReason      string `json:"blocked_reason,omitempty"`
+	PendingDispatch    bool   `json:"pending_dispatch"`
+	PendingAdvance     bool   `json:"pending_advance"`
 }
 
 func Compose(path string, requireSecret bool) (*Operator, error) {
@@ -65,7 +77,8 @@ func (o *Operator) Validation() ValidationReport {
 func (o *Operator) DryRun(ctx context.Context) (domain.Run, error) { return DryRun(ctx) }
 
 func SummarizeRun(run domain.Run) RunReport {
-	return RunReport{ID: run.ID, ProjectID: run.ProjectID, IssueID: run.IssueID, Status: run.Status, Step: run.Step, Attempts: run.Attempts, Evidence: append([]string(nil), run.Evidence...)}
+	return RunReport{ID: run.ID, ProjectID: run.ProjectID, IssueID: run.IssueID, Status: run.Status, Step: run.Step, Attempts: run.Attempts,
+		Evidence: append([]string(nil), run.Evidence...)}
 }
 
 func (o *Operator) Once(ctx context.Context, apply bool) (domain.Run, error) {
@@ -91,9 +104,9 @@ func (o *Operator) Doctor() DoctorReport {
 		checks = append(checks, Check{Name: "linear", Status: "degraded", Message: "offline check only; use doctor --online for the bounded query-only probe"})
 	}
 	if executableAvailable(o.Config.OpenClaw.Executable) {
-		checks = append(checks, Check{Name: "openclaw", Status: "degraded", Message: "executable is discoverable; executor is not implemented until M3"})
+		checks = append(checks, Check{Name: "openclaw", Status: "ready", Message: "executable is discoverable; offline doctor did not invoke it"})
 	} else {
-		checks = append(checks, Check{Name: "openclaw", Status: "not-ready", Message: "executable is unavailable; executor is not implemented until M3"})
+		checks = append(checks, Check{Name: "openclaw", Status: "not-ready", Message: "executable is unavailable"})
 	}
 	checks = append(checks, checkRoot("review-root", o.Config.Paths.ReviewRoot), checkRoot("artifact-root", o.Config.Paths.ArtifactRoot))
 	if secretErr != nil {
@@ -153,7 +166,16 @@ func (o *Operator) Status() StatusReport {
 	if !info.Mode().IsRegular() || info.Mode().Perm()&0o077 != 0 {
 		return StatusReport{Database: o.Config.Paths.StateDB, Status: "not-ready", Message: "state database is not a private regular file"}
 	}
-	return StatusReport{Database: o.Config.Paths.StateDB, Status: "present", Message: "state database exists; M1 status does not mutate or open it"}
+	run, readErr := durablesqlite.ReadRun(context.Background(), o.Config.Paths.StateDB, StableRunID(o.Config))
+	if errors.Is(readErr, ports.ErrNotFound) {
+		return StatusReport{Database: o.Config.Paths.StateDB, Status: "present", Message: "state database exists; configured run has not started"}
+	}
+	if readErr != nil {
+		return StatusReport{Database: o.Config.Paths.StateDB, Status: "not-ready", Message: "state database could not be read safely"}
+	}
+	report := StatusRunReport{RunReport: SummarizeRun(run), Fence: run.Lease.Fence, CheckpointSequence: run.CheckpointSequence,
+		BlockedReason: run.BlockedReason, PendingDispatch: run.PendingDispatch != nil, PendingAdvance: run.PendingAdvance != nil}
+	return StatusReport{Database: o.Config.Paths.StateDB, Status: string(run.Status), Message: "durable configured run inspected read-only", Run: &report}
 }
 
 func checkStateDB(path string) Check {

@@ -70,6 +70,7 @@ func (s *Store) validateRecords(ctx context.Context) error {
 
 	allowedPhases := map[string]bool{
 		"run_created": true, "lease_acquired": true, "attempt_reserved": true,
+		"dispatch_started": true, "dispatch_recorded": true,
 		"checkpoint_committed": true, "review_bound": true, "review_consumed": true,
 		"advance_frozen": true, "remote_advance_committed": true, "advance_reconciled": true,
 		"run_blocked": true, "run_completed": true, "state_updated": true,
@@ -224,18 +225,9 @@ func (s *Store) validateRecords(ctx context.Context) error {
 		return fmt.Errorf("validate issues: %w", classify(err))
 	}
 	rows.Close()
-	for id, run := range runs {
-		issue, ok := issues[run.IssueID]
-		if !ok || issue.ProjectID != run.ProjectID {
-			return fmt.Errorf("%w: run %q current issue is missing or mismatched", ErrInvalidRecord, id)
-		}
-	}
-	for id, review := range reviews {
-		issue, ok := issues[review.IssueID]
-		if !ok || issue.ProjectID != review.ProjectID {
-			return fmt.Errorf("%w: review %q issue is missing or mismatched", ErrInvalidRecord, id)
-		}
-	}
+	// The issues table belongs to the credential-free reference Linear adapter. Production
+	// runs and imported reviews are bound to the remote adapter and therefore need not have
+	// duplicate rows here. Local advancement receipts below remain strictly cross-checked.
 
 	rows, err = s.db.QueryContext(ctx, `SELECT idempotency_key, request, committed_at FROM advance_receipts`)
 	if err != nil {

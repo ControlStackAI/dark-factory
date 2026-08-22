@@ -1,0 +1,6 @@
+Script started on 2026-08-21 03:55:18-07:00 [COMMAND="go test -count=20 ./internal/adapters/openclaw ./internal/app ./cmd/factoryd" <not executed on terminal>]
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/openclaw	51.379s
+ok  	github.com/ControlStackAI/dark-factory/internal/app	9.297s
+ok  	github.com/ControlStackAI/dark-factory/cmd/factoryd	32.670s
+
+Script done on 2026-08-21 03:56:10-07:00 [COMMAND_EXIT_CODE="0"]

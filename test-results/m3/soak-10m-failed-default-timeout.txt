@@ -1,0 +1,163 @@
+Script started on 2026-08-21 03:31:47-07:00 [COMMAND="go test -count=1 -run TestM3RandomizedRestartSoak -v ./internal/app" <not executed on terminal>]
+=== RUN   TestM3RandomizedRestartSoak
+panic: test timed out after 10m0s
+	running tests:
+		TestM3RandomizedRestartSoak (10m0s)
+
+goroutine 229198 [running]:
+testing.(*M).startAlarm.func1()
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/testing/testing.go:2802 +0x354
+created by time.goFunc
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/time/sleep.go:215 +0x2d
+
+goroutine 1 [chan receive, 9 minutes]:
+testing.(*T).Run(0xc4e3cfea248, {0xa6493f?, 0x0?}, 0xa8ad50)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/testing/testing.go:2109 +0x4e5
+testing.runTests.func1(0xc4e3cfea248)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/testing/testing.go:2585 +0x3e
+testing.tRunner(0xc4e3cfea248, 0xc4e3cf1bc58)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/testing/testing.go:2036 +0xea
+testing.runTests({0xa6c360, 0x26}, {0xa72775, 0x33}, 0xc4e3ced41c8, {0xf2ca20, 0xc, 0xc}, {0xc29a28bb089e39bb, 0x8bb2dce332, ...})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/testing/testing.go:2583 +0x505
+testing.(*M).Run(0xc4e3cfbe640)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/testing/testing.go:2443 +0x6ac
+main.main()
+	_testmain.go:68 +0x9b
+
+goroutine 7 [syscall]:
+syscall.Syscall6(0x4a, 0x8, 0x0, 0x0, 0x0, 0x0, 0x0)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/syscall/syscall_linux.go:96 +0x39
+modernc.org/libc.___syscall_cp(0x75d14e252020?, 0x0?, 0xa81d55?, 0x75d14e252230?, 0x63fdff?, 0x75d14e252020?, 0x75d14e260772?, 0x633b20?)
+	/home/matthew/go/pkg/mod/modernc.org/libc@v1.67.6/syscall_musl.go:15 +0x35
+modernc.org/libc.Xfsync(0xc4e3d0604d0, 0x3d030c70?)
+	/home/matthew/go/pkg/mod/modernc.org/libc@v1.67.6/ccgo_linux_amd64.go:150793 +0x2e
+modernc.org/sqlite/lib._full_fsync(0xc4e3d0604d0?, 0x4e260772?, 0x75d1?, 0x4e250020?)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/lib/sqlite_linux_amd64.go:22929 +0x13
+modernc.org/sqlite/lib._unixSync(0xc4e3d0604d0, 0x75d14e2606a0, 0x2)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/lib/sqlite_linux_amd64.go:23040 +0xe7
+modernc.org/sqlite/lib._sqlite3OsSync(0xc4e3d0604d0?, 0x75d14e2606a0?, 0x0?)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/lib/sqlite_linux_amd64.go:12332 +0x25
+modernc.org/sqlite/lib._syncJournal(0xc4e3d0604d0, 0x75d14e260428, 0x0)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/lib/sqlite_linux_amd64.go:33688 +0x25d
+modernc.org/sqlite/lib._sqlite3PagerCommitPhaseOne(0xc4e3d0604d0, 0x75d14e260428, 0x0, 0x0)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/lib/sqlite_linux_amd64.go:35685 +0x209
+modernc.org/sqlite/lib._sqlite3BtreeCommitPhaseOne(0xc4e3d0604d0, 0x75d14e2801a8, 0x0)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/lib/sqlite_linux_amd64.go:45360 +0xc8
+modernc.org/sqlite/lib._vdbeCommit(0xc4e3d0604d0, 0x75d14e260028, 0x75d14c027eb8)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/lib/sqlite_linux_amd64.go:57570 +0xd59
+modernc.org/sqlite/lib._sqlite3VdbeHalt(0xc4e3d0604d0, 0x75d14c027eb8)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/lib/sqlite_linux_amd64.go:57989 +0x2b1
+modernc.org/sqlite/lib._sqlite3VdbeReset(0xc4e3d0604d0, 0x75d14c027eb8)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/lib/sqlite_linux_amd64.go:58161 +0x38
+modernc.org/sqlite/lib.Xsqlite3_finalize(0xc4e3d0604d0, 0x75d14c027eb8)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/lib/sqlite_linux_amd64.go:60082 +0xb9
+modernc.org/sqlite.(*conn).finalize(0xc4e3d0406e0, 0x75d1977d0460?)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/conn.go:490 +0x1c
+modernc.org/sqlite.(*rows).Close(0xc4e3d040870)
+	/home/matthew/go/pkg/mod/modernc.org/sqlite@v1.45.0/rows.go:70 +0xd3
+database/sql.(*Rows).close.func1()
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/database/sql/sql.go:3456 +0x29
+database/sql.withLock({0xa95060, 0xc4e3d184900}, 0xc4e3d031160)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/database/sql/sql.go:3572 +0x71
+database/sql.(*Rows).close(0xc4e3d036780, {0x0, 0x0})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/database/sql/sql.go:3455 +0x13a
+database/sql.(*Rows).Close(0xc4e3d036780)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/database/sql/sql.go:3439 +0x26
+database/sql.(*Row).Scan(0xc4e3d0312f8, {0xc4e3d031458?, 0x1, 0x1})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/database/sql/sql.go:3520 +0x16b
+github.com/ControlStackAI/dark-factory/internal/adapters/sqlite.(*Store).initialize(0xc4e3d456c60, {0xa96d48, 0xf56880})
+	/home/matthew/projects/Personal/dark-factory-worktrees/m3-openclaw-supervisor/internal/adapters/sqlite/db.go:119 +0xa2f
+github.com/ControlStackAI/dark-factory/internal/adapters/sqlite.Open({0xc4e3d200b40, 0x4c}, {0x0, 0x0, 0x1?})
+	/home/matthew/projects/Personal/dark-factory-worktrees/m3-openclaw-supervisor/internal/adapters/sqlite/db.go:66 +0x193
+github.com/ControlStackAI/dark-factory/internal/app.TestM3RandomizedRestartSoak(0xc4e3cfea488)
+	/home/matthew/projects/Personal/dark-factory-worktrees/m3-openclaw-supervisor/internal/app/soak_test.go:126 +0xba5
+testing.tRunner(0xc4e3cfea488, 0xa8ad50)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/testing/testing.go:2036 +0xea
+created by testing.(*T).Run in goroutine 1
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/testing/testing.go:2101 +0x4c5
+
+goroutine 18 [IO wait, 9 minutes]:
+internal/poll.runtime_pollWait(0x75d19764b800, 0x72)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/runtime/netpoll.go:351 +0x85
+internal/poll.(*pollDesc).wait(0xc4e3d112000?, 0x8?, 0x0)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Accept(0xc4e3d112000)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/internal/poll/fd_unix.go:613 +0x28c
+net.(*netFD).accept(0xc4e3d112000)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/fd_unix.go:150 +0x29
+net.(*TCPListener).accept(0xc4e3d12a000)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/tcpsock_posix.go:159 +0x1b
+net.(*TCPListener).Accept(0xc4e3d12a000)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/tcpsock.go:387 +0x30
+net/http.(*Server).Serve(0xc4e3d12e000, {0xa96880, 0xc4e3d12a000})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/http/server.go:3434 +0x30c
+net/http/httptest.(*Server).goServe.func1()
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/http/httptest/server.go:341 +0x55
+created by net/http/httptest.(*Server).goServe in goroutine 7
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/http/httptest/server.go:339 +0x65
+
+goroutine 34 [IO wait]:
+internal/poll.runtime_pollWait(0x75d19764b400, 0x72)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/runtime/netpoll.go:351 +0x85
+internal/poll.(*pollDesc).wait(0xc4e3d184000?, 0xc4e3d1a6000?, 0x0)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0xc4e3d184000, {0xc4e3d1a6000, 0x1000, 0x1000})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/internal/poll/fd_unix.go:165 +0x2ae
+net.(*netFD).Read(0xc4e3d184000, {0xc4e3d1a6000?, 0x4c6180?, 0xc4e3d184000?})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/fd_posix.go:68 +0x25
+net.(*conn).Read(0xc4e3d188000, {0xc4e3d1a6000?, 0x0?, 0x72?})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/net.go:196 +0x45
+net/http.(*connReader).Read(0xc4e3d19c000, {0xc4e3d1a6000, 0x1000, 0x1000})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/http/server.go:812 +0x154
+bufio.(*Reader).fill(0xc4e3d1a4000)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/bufio/bufio.go:113 +0x103
+bufio.(*Reader).Peek(0xc4e3d1a4000, 0x4)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/bufio/bufio.go:152 +0x53
+net/http.(*conn).serve(0xc4e3d18a000, {0xa96df0, 0xc4e3cfc1d10})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/http/server.go:2109 +0x7b3
+created by net/http.(*Server).Serve in goroutine 18
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/http/server.go:3464 +0x485
+
+goroutine 13 [IO wait]:
+internal/poll.runtime_pollWait(0x75d19764b600, 0x72)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/runtime/netpoll.go:351 +0x85
+internal/poll.(*pollDesc).wait(0xc4e3cff4480?, 0xc4e3d08f000?, 0x0)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/internal/poll/fd_poll_runtime.go:84 +0x27
+internal/poll.(*pollDesc).waitRead(...)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0xc4e3cff4480, {0xc4e3d08f000, 0x1000, 0x1000})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/internal/poll/fd_unix.go:165 +0x2ae
+net.(*netFD).Read(0xc4e3cff4480, {0xc4e3d08f000?, 0x0?, 0x1?})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/fd_posix.go:68 +0x25
+net.(*conn).Read(0xc4e3cec4188, {0xc4e3d08f000?, 0xc4e3d0ae300?, 0x9ea300?})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/net.go:196 +0x45
+net/http.(*persistConn).Read(0xc4e3cff6500, {0xc4e3d08f000?, 0xa92d20?, 0xf20a80?})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/http/transport.go:2174 +0x47
+bufio.(*Reader).fill(0xc4e3cee65a0)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/bufio/bufio.go:113 +0x103
+bufio.(*Reader).Peek(0xc4e3cee65a0, 0x1)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/bufio/bufio.go:152 +0x53
+net/http.(*persistConn).readLoop(0xc4e3cff6500)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/http/transport.go:2330 +0x172
+created by net/http.(*Transport).dialConn in goroutine 12
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/http/transport.go:1994 +0x16ac
+
+goroutine 14 [select]:
+net/http.(*persistConn).writeLoop(0xc4e3cff6500)
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/http/transport.go:2652 +0xe6
+created by net/http.(*Transport).dialConn in goroutine 12
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/net/http/transport.go:1995 +0x16fe
+
+goroutine 229089 [select]:
+database/sql.(*DB).connectionOpener(0xc4e3d044750, {0xa96e28, 0xc4e3d040690})
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/database/sql/sql.go:1261 +0x89
+created by database/sql.OpenDB in goroutine 7
+	/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5/share/go/src/database/sql/sql.go:841 +0x130
+FAIL	github.com/ControlStackAI/dark-factory/internal/app	600.026s
+FAIL
+
+Script done on 2026-08-21 03:41:48-07:00 [COMMAND_EXIT_CODE="1"]

@@ -1,0 +1,15 @@
+Script started on 2026-08-21 03:54:08-07:00 [COMMAND="go test -race -count=1 ./..." <not executed on terminal>]
+ok  	github.com/ControlStackAI/dark-factory/cmd/factoryctl	1.164s
+ok  	github.com/ControlStackAI/dark-factory/cmd/factoryd	3.153s
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/linear	1.944s
+?   	github.com/ControlStackAI/dark-factory/internal/adapters/memory	[no test files]
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/openclaw	3.744s
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/sqlite	4.262s
+ok  	github.com/ControlStackAI/dark-factory/internal/app	2.410s
+?   	github.com/ControlStackAI/dark-factory/internal/buildinfo	[no test files]
+ok  	github.com/ControlStackAI/dark-factory/internal/config	1.307s
+ok  	github.com/ControlStackAI/dark-factory/internal/domain	1.015s
+ok  	github.com/ControlStackAI/dark-factory/internal/factory	1.017s
+?   	github.com/ControlStackAI/dark-factory/internal/ports	[no test files]
+
+Script done on 2026-08-21 03:54:13-07:00 [COMMAND_EXIT_CODE="0"]

@@ -60,7 +60,7 @@ limits:
 
 - `mode` is exactly `dry-run` or `live`. Live mutation requires both `mode: live` and the
   daemon process flag `--apply`. At M2, satisfying both keys proves the gate and then fails
-  closed because the OpenClaw executor is not implemented until M3.
+  closed unless the production supervisor is explicitly entered with both keys.
 - `paths.state_db` must be inside `paths.state_root`. The state, artifact, and review roots
   must be distinct and non-overlapping. The workspace and every controller path must resolve
   inside at least one `allowed_roots` entry.
@@ -76,8 +76,11 @@ limits:
   only `env:NAME`, where `NAME` is an uppercase environment identifier. `validate` requires
   that variable to be nonempty but never prints its value. M1 never sends it anywhere.
 - `openclaw.executable`, `agent`, and whitespace-free isolated `session_prefix` are required.
-  `model` is optional. `timeout` is a positive Go duration. `delivery` must remain `false`.
-  M1 never executes this command; M3 will define the argv contract.
+  `model` remains an optional configuration field for compatibility, but live M3 composition
+  rejects a nonempty override so its argv stays exact. `timeout` is a positive Go duration and is capped when necessary so
+  shutdown plus a safety margin fit inside the lease. `delivery` must remain `false`. The M3
+  executor uses direct argv, a private message file, JSON output, an isolated session key, and
+  no delivery or reply-routing arguments.
 - Every duration in `budgets` is positive. `max_backoff` is at least `initial_backoff`;
   `max_attempts` is 1–1000; consecutive failures are 1 through `max_attempts`.
 - Lifecycle values are preferred names only. M2 resolves Linear states by lifecycle type and
@@ -86,7 +89,7 @@ limits:
 - Output bytes are bounded to 1 KiB–16 MiB, artifact bytes to 1 KiB–1 GiB, and artifact count
   to 1–10,000. M4 will enforce packet membership and receipt semantics.
 
-## Command behavior through M2
+## Command behavior through M3
 
 - `factoryctl init --config PATH` creates missing private roots and atomically installs a
   `0600` config without replacing any existing file, symlink, or concurrent winner.
@@ -96,6 +99,8 @@ limits:
 - `status` inspects the configured state path without opening SQLite or creating files.
 - `factoryd --once` uses the same `internal/app` composition root as the operator commands.
 
-The Linear client exists but is not connected to live daemon execution. OpenClaw execution,
-continuous scheduling, review packet import, service installation, and release packaging
-remain later milestones.
+The Linear and OpenClaw clients are connected only when config mode is `live` and `factoryd`
+also receives `--apply`. `factoryd` then remains in the foreground, holds the database's
+single-instance lock, reconciles/retries durably, polls the SQLite review boundary, and handles
+SIGTERM cleanly. Review packet import, service installation, and release packaging remain
+later milestones.

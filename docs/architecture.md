@@ -121,8 +121,10 @@ forward-only, fail-closed policy.
 
 ### Crash reconciliation
 
-An OpenClaw attempt is reserved and journaled before dispatch. Losing the process after that
-commit consumes the attempt but cannot dispatch it twice; recovery uses the next attempt.
+An OpenClaw attempt is reserved and journaled before dispatch, then marked started immediately
+before `exec`. Losing the process with either durable state consumes that attempt and cannot
+dispatch it twice. M3 does not guess whether the external run started: restart explicitly
+blocks the run for reconciliation/manual resolution instead of silently using another attempt.
 Lease fence counters live in the run snapshot, so a newly acquired lease always exceeds all
 pre-restart tokens and stale workers remain rejected.
 
@@ -138,17 +140,36 @@ Deterministic after-commit hooks test each persisted controller and advancement 
 returning an error only after the transaction is durable, modeling abrupt termination at the
 point of maximum ambiguity.
 
+## M3 execution and supervision
+
+The production OpenClaw adapter invokes the configured executable directly, never through a
+shell. The prompt is written mode `0600` relative to an anchored private directory and passed
+as `/proc/self/fd/3/<name>`; it is removed after the child is reaped. Each attempt uses a
+deterministic unique session key. Delivery and reply-routing flags are absent. Stdout and
+stderr have independent fixed capture bounds; surfaced diagnostics report only stderr size and
+truncation while withholding its untrusted content. Timeout/cancellation terminates the process group. A successful CLI envelope
+must contain exactly one payload whose text is the strict version-1 controller result. Raw
+bounded stdout is atomically snapshotted mode `0600` in the configured artifact root before
+the checkpoint is accepted. The Linear credential environment variable is removed from the
+child environment before exec; it is available only to the controller's Linear adapter.
+
+`factoryd` owns a nonblocking advisory lock next to the configured database and remains in the
+foreground. It resumes the one configured durable run, reacquires expired leases with a higher
+fence, handles pending advancement before claims or turns, reserves before execution, polls
+the durable review store without increasing attempts, and uses bounded exponential backoff.
+The OpenClaw timeout is capped below the configured lease by the shutdown allowance and a
+safety margin, preserving the rule that only an accepted result renews a lease. `SIGTERM` is
+context-driven and does not daemonize or depend on a lane-owned background child.
+
 ## Current Limitations
 
-- `factoryd` supports only `--once`; continuous scheduling, recovery supervision, and service
-  installation are not implemented.
-- The bounded Linear Cloud adapter exists and is fake-tested, but live daemon composition is
-  unavailable until the OpenClaw executor and supervisor arrive in M3.
+- Continuous foreground supervision and live Linear/OpenClaw composition are implemented;
+  service installation and systemd unit packaging are not.
 - Linear cannot atomically complete one issue and adopt another. SQLite freezes controller
   intent; independently reconcilable remote suboperations and final verification make restart
   convergence honest but cannot eliminate temporary partial Linear state.
-- Review artifacts are stored as SQLite blobs only for the credential-free slice. Production
-  artifact retention and backup policy are not defined.
+- M3 polls the existing durable review store. Untrusted filesystem packet validation/import is
+  deliberately deferred to M4; response snapshots alone cannot authorize completion.
 - The phase journal is append-only in schema v1; retention, compaction, and archive growth
   monitoring are not implemented yet. Startup validation scans durable records and will grow
   more expensive with database size.

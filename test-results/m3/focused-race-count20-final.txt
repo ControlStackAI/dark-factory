@@ -1,0 +1,3 @@
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/openclaw	58.411s
+ok  	github.com/ControlStackAI/dark-factory/internal/app	24.596s
+ok  	github.com/ControlStackAI/dark-factory/cmd/factoryd	43.755s

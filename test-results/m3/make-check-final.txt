@@ -1,0 +1,17 @@
+go test ./...
+ok  	github.com/ControlStackAI/dark-factory/cmd/factoryctl	0.069s
+ok  	github.com/ControlStackAI/dark-factory/cmd/factoryd	2.403s
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/linear	(cached)
+?   	github.com/ControlStackAI/dark-factory/internal/adapters/memory	[no test files]
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/openclaw	3.355s
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/sqlite	(cached)
+ok  	github.com/ControlStackAI/dark-factory/internal/app	0.568s
+?   	github.com/ControlStackAI/dark-factory/internal/buildinfo	[no test files]
+ok  	github.com/ControlStackAI/dark-factory/internal/config	(cached)
+ok  	github.com/ControlStackAI/dark-factory/internal/domain	(cached)
+ok  	github.com/ControlStackAI/dark-factory/internal/factory	(cached)
+?   	github.com/ControlStackAI/dark-factory/internal/ports	[no test files]
+go vet ./...
+go build ./...
+go run ./cmd/factoryctl version
+dev

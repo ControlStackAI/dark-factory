@@ -147,11 +147,27 @@ func (c *Controller) Checkpoint(ctx context.Context, runID string, fence, sequen
 }
 
 func (c *Controller) ExecuteTurn(ctx context.Context, runID string, fence uint64) (domain.TurnResult, error) {
+	request, err := c.ReserveTurn(ctx, runID, fence)
+	if err != nil {
+		return domain.TurnResult{}, err
+	}
+	if err := c.MarkDispatchStarted(ctx, runID, fence, request.Attempt); err != nil {
+		return domain.TurnResult{}, err
+	}
+	result, turnErr := c.openclaw.ExecuteTurn(ctx, request)
+	return c.RecordTurn(context.WithoutCancel(ctx), runID, fence, request.Attempt, result, turnErr)
+}
+
+// ReserveTurn atomically spends an attempt before any external process is started.
+func (c *Controller) ReserveTurn(ctx context.Context, runID string, fence uint64) (domain.TurnRequest, error) {
 	var request domain.TurnRequest
 	err := c.update(ctx, runID, func(run *domain.Run) error {
 		now := c.clock.Now()
 		if err := validateLease(run, fence, now); err != nil {
 			return err
+		}
+		if run.PendingDispatch != nil {
+			return ErrDispatchPending
 		}
 		if run.PendingAdvance != nil {
 			return fmt.Errorf("%w: issue advancement is pending", ErrInvalidTransition)
@@ -161,23 +177,48 @@ func (c *Controller) ExecuteTurn(ctx context.Context, runID string, fence uint64
 			return nil
 		}
 		run.Attempts++
+		run.PendingDispatch = &domain.PendingDispatch{Attempt: run.Attempts, Fence: fence, State: domain.DispatchReserved, ReservedAt: now}
 		request = domain.TurnRequest{RunID: run.ID, ProjectID: run.ProjectID, IssueID: run.IssueID, Attempt: run.Attempts, Fence: fence, LeaseUntil: run.Lease.ExpiresAt}
 		return nil
 	})
 	if err != nil {
-		return domain.TurnResult{}, err
+		return domain.TurnRequest{}, err
 	}
 	if request.RunID == "" {
-		return domain.TurnResult{}, ErrBudgetExhausted
+		return domain.TurnRequest{}, ErrBudgetExhausted
 	}
+	return request, nil
+}
 
-	result, turnErr := c.openclaw.ExecuteTurn(ctx, request)
+// MarkDispatchStarted is committed immediately before exec. A crash on either side of
+// this acknowledgement leaves PendingDispatch set and recovery refuses redispatch.
+func (c *Controller) MarkDispatchStarted(ctx context.Context, runID string, fence uint64, attempt int) error {
+	return c.update(ctx, runID, func(run *domain.Run) error {
+		now := c.clock.Now()
+		if err := validateLease(run, fence, now); err != nil {
+			return err
+		}
+		if run.PendingDispatch == nil || run.PendingDispatch.Attempt != attempt || run.PendingDispatch.Fence != fence || run.PendingDispatch.State != domain.DispatchReserved {
+			return ErrDispatchPending
+		}
+		run.PendingDispatch.State = domain.DispatchStarted
+		run.PendingDispatch.StartedAt = now
+		return nil
+	})
+}
+
+// RecordTurn clears the durable dispatch only while the same live worker holds its fence.
+func (c *Controller) RecordTurn(ctx context.Context, runID string, fence uint64, attempt int, result domain.TurnResult, turnErr error) (domain.TurnResult, error) {
 	budgetExhausted := false
 	applyErr := c.update(ctx, runID, func(run *domain.Run) error {
 		now := c.clock.Now()
 		if err := validateLease(run, fence, now); err != nil {
 			return err
 		}
+		if run.PendingDispatch == nil || run.PendingDispatch.Attempt != attempt || run.PendingDispatch.Fence != fence || run.PendingDispatch.State != domain.DispatchStarted {
+			return ErrDispatchPending
+		}
+		run.PendingDispatch = nil
 		if !now.Before(run.DeadlineAt) {
 			block(run, now, "wall-clock budget exhausted")
 			budgetExhausted = true
@@ -190,12 +231,21 @@ func (c *Controller) ExecuteTurn(ctx context.Context, runID string, fence uint64
 			}
 			return nil
 		}
+		if result.ResponseRef == "" || !validSHA256(result.ResponseSHA256) || result.SessionKey == "" {
+			run.ConsecutiveFailures++
+			if run.ConsecutiveFailures >= run.Policy.MaxConsecutiveFailures {
+				block(run, now, "consecutive agent-turn failure budget exhausted")
+			}
+			turnErr = ErrInvalidEvidence
+			return nil
+		}
 		run.Step = result.Step
 		run.CheckpointSequence++
 		run.Lease.ExpiresAt = now.Add(run.Policy.LeaseDuration)
 		run.ConsecutiveFailures = 0
 		run.Review = nil
 		run.Evidence = appendEvidence(run.Evidence, result.Evidence)
+		run.LastTurnArtifact = &domain.TurnArtifact{Attempt: attempt, SessionKey: result.SessionKey, ResponseRef: result.ResponseRef, ResponseSHA256: result.ResponseSHA256}
 		return nil
 	})
 	if applyErr != nil {
@@ -211,6 +261,20 @@ func (c *Controller) ExecuteTurn(ctx context.Context, runID string, fence uint64
 		return domain.TurnResult{}, ErrInvalidEvidence
 	}
 	return result, nil
+}
+
+// BlockAmbiguousDispatch makes process-loss ambiguity explicit and terminal. Operators
+// can inspect the attempt/fence in durable state; v0.1 intentionally has no unsafe replay.
+func (c *Controller) BlockAmbiguousDispatch(ctx context.Context, runID string) error {
+	return c.update(ctx, runID, func(run *domain.Run) error {
+		if run.Status != domain.RunActive || run.PendingDispatch == nil {
+			return ErrDispatchPending
+		}
+		attempt := run.PendingDispatch.Attempt
+		run.PendingDispatch = nil
+		block(run, c.clock.Now(), fmt.Sprintf("OpenClaw attempt %d is ambiguous and requires manual resolution", attempt))
+		return nil
+	})
 }
 
 func (c *Controller) BindReview(ctx context.Context, runID string, fence uint64, reviewID string) error {
@@ -469,6 +533,18 @@ func concreteEvidence(evidence string) bool {
 	default:
 		return true
 	}
+}
+
+func validSHA256(value string) bool {
+	if len(value) != sha256.Size*2 {
+		return false
+	}
+	for _, r := range value {
+		if !strings.ContainsRune("0123456789abcdef", r) {
+			return false
+		}
+	}
+	return true
 }
 
 func appendEvidence(existing []string, evidence string) []string {

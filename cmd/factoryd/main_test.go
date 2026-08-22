@@ -2,18 +2,35 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 
+	durablesqlite "github.com/ControlStackAI/dark-factory/internal/adapters/sqlite"
+	"github.com/ControlStackAI/dark-factory/internal/app"
 	"github.com/ControlStackAI/dark-factory/internal/config"
 	"github.com/ControlStackAI/dark-factory/internal/domain"
 )
 
 func TestDaemonTwoKeyInterlockAndNoAdapterCall(t *testing.T) {
 	path, cfg, sentinel := daemonConfig(t)
+	original := runLiveSupervisor
+	liveCalls := 0
+	runLiveSupervisor = func(_ context.Context, got config.Config) (domain.Run, error) {
+		liveCalls++
+		if got.Mode != "live" {
+			t.Fatalf("live composition received mode %q", got.Mode)
+		}
+		return domain.Run{ID: "live", ProjectID: got.Scope.ProjectID, IssueID: got.Scope.IssueID, Status: domain.RunComplete, Step: "complete"}, nil
+	}
+	t.Cleanup(func() { runLiveSupervisor = original })
 	cases := []struct {
 		name, mode string
 		args       []string
@@ -23,7 +40,7 @@ func TestDaemonTwoKeyInterlockAndNoAdapterCall(t *testing.T) {
 		{"dry-no-apply", "dry-run", []string{"--once", "--config", path}, "", true},
 		{"dry-apply", "dry-run", []string{"--once", "--apply", "--config", path}, "--apply requires config mode live", false},
 		{"live-no-apply", "live", []string{"--once", "--config", path}, "config mode live requires --apply", false},
-		{"live-apply", "live", []string{"--once", "--apply", "--config", path}, "not implemented until M2/M3", false},
+		{"live-apply", "live", []string{"--once", "--apply", "--config", path}, "", true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -41,6 +58,9 @@ func TestDaemonTwoKeyInterlockAndNoAdapterCall(t *testing.T) {
 				t.Fatalf("adapter called: %v", statErr)
 			}
 		})
+	}
+	if liveCalls != 1 {
+		t.Fatalf("live composition calls=%d, want 1", liveCalls)
 	}
 }
 
@@ -101,6 +121,143 @@ func TestDaemonDurableStateCompatibility(t *testing.T) {
 			t.Fatalf("unsafe compatibility combination succeeded: %v", args)
 		}
 	}
+}
+
+func TestForegroundDaemonProcessLockStatusAndSIGKILLRestart(t *testing.T) {
+	path, cfg, sentinel := daemonConfig(t)
+	cfg.Mode = "live"
+	cfg.Budgets.LeaseDuration = "200ms"
+	cfg.Budgets.PollInterval = "10ms"
+	cfg.Budgets.InitialBackoff = "10ms"
+	cfg.Budgets.MaxBackoff = "20ms"
+	cfg.Budgets.MaxRunDuration = "1h"
+	cfg.Budgets.ShutdownTimeout = "50ms"
+	cfg.OpenClaw.Timeout = "50ms"
+	cfg.OpenClaw.Executable = "/bin/false"
+	writeDaemonConfig(t, path, cfg)
+	store, err := durablesqlite.Open(cfg.Paths.StateDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	policy := domain.Policy{LeaseDuration: 200 * time.Millisecond, MaxRunDuration: time.Hour, MaxAttempts: cfg.Budgets.MaxAttempts, MaxConsecutiveFailures: cfg.Budgets.MaxConsecutiveFailures}
+	runID := app.StableRunID(cfg)
+	if err := store.Create(context.Background(), domain.Run{ID: runID, ProjectID: cfg.Scope.ProjectID, IssueID: cfg.Scope.IssueID, Status: domain.RunActive, Step: "process fixture", Policy: policy, StartedAt: now, DeadlineAt: now.Add(time.Hour), Version: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(cfg.Paths.StateDB, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	binDir := t.TempDir()
+	daemonBin := filepath.Join(binDir, "factoryd")
+	ctlBin := filepath.Join(binDir, "factoryctl")
+	for target, pkg := range map[string]string{daemonBin: ".", ctlBin: "../factoryctl"} {
+		build := exec.Command("go", "build", "-o", target, pkg)
+		build.Dir = "."
+		if output, err := build.CombinedOutput(); err != nil {
+			t.Fatalf("build %s: %v\n%s", pkg, err, output)
+		}
+	}
+
+	first := exec.Command(daemonBin, "--apply", "--config", path)
+	first.Env = testOnlyLinearEnv()
+	var firstOut, firstErr strings.Builder
+	first.Stdout, first.Stderr = &firstOut, &firstErr
+	if err := first.Start(); err != nil {
+		t.Fatal(err)
+	}
+	firstFence := waitForFence(t, cfg.Paths.StateDB, runID, 1)
+
+	contender := exec.Command(daemonBin, "--apply", "--config", path)
+	contender.Env = testOnlyLinearEnv()
+	contenderOutput, contenderErr := contender.CombinedOutput()
+	if contenderErr == nil || !strings.Contains(string(contenderOutput), "already owns this state database") {
+		t.Fatalf("second daemon error=%v output=%s", contenderErr, contenderOutput)
+	}
+
+	status := exec.Command(ctlBin, "status", "--config", path, "--json")
+	status.Env = withoutLinearEnv()
+	statusOutput, err := status.CombinedOutput()
+	if err != nil {
+		t.Fatalf("factoryctl status: %v\n%s", err, statusOutput)
+	}
+	var report struct {
+		Status string `json:"status"`
+		Run    struct {
+			ID       string `json:"id"`
+			Attempts int    `json:"attempts"`
+			Fence    uint64 `json:"fence"`
+		} `json:"run"`
+	}
+	if err := json.Unmarshal(statusOutput, &report); err != nil || report.Status != "active" || report.Run.ID != runID || report.Run.Fence != firstFence {
+		t.Fatalf("status=%s decode=%v report=%+v", statusOutput, err, report)
+	}
+
+	if err := first.Process.Signal(syscall.SIGKILL); err != nil {
+		t.Fatal(err)
+	}
+	if err := first.Wait(); err == nil {
+		t.Fatal("SIGKILLed daemon exited successfully")
+	}
+	second := exec.Command(daemonBin, "--apply", "--config", path)
+	second.Env = testOnlyLinearEnv()
+	var secondOut, secondErr strings.Builder
+	second.Stdout, second.Stderr = &secondOut, &secondErr
+	if err := second.Start(); err != nil {
+		t.Fatal(err)
+	}
+	secondFence := waitForFence(t, cfg.Paths.StateDB, runID, firstFence+1)
+	if secondFence <= firstFence {
+		t.Fatalf("restart fence=%d first=%d", secondFence, firstFence)
+	}
+	if err := second.Process.Signal(syscall.SIGTERM); err != nil {
+		t.Fatal(err)
+	}
+	if err := second.Wait(); err != nil {
+		t.Fatalf("SIGTERM daemon: %v stderr=%s", err, secondErr.String())
+	}
+	reopened, err := durablesqlite.Open(cfg.Paths.StateDB)
+	if err != nil {
+		t.Fatalf("reopen after process restart: %v", err)
+	}
+	defer reopened.Close()
+	if _, err := reopened.Get(context.Background(), runID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(sentinel); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("OpenClaw executable unexpectedly ran: %v", err)
+	}
+}
+
+func waitForFence(t *testing.T, dbPath, runID string, minimum uint64) uint64 {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		run, err := durablesqlite.ReadRun(context.Background(), dbPath, runID)
+		if err == nil && run.Lease.Fence >= minimum {
+			return run.Lease.Fence
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("durable lease fence did not reach %d", minimum)
+	return 0
+}
+
+func withoutLinearEnv() []string {
+	var result []string
+	for _, value := range os.Environ() {
+		if !strings.HasPrefix(value, "LINEAR_API_KEY=") {
+			result = append(result, value)
+		}
+	}
+	return result
+}
+
+func testOnlyLinearEnv() []string {
+	return append(withoutLinearEnv(), "LINEAR_API_KEY=m3-loopback-test-only")
 }
 
 func daemonConfig(t *testing.T) (string, config.Config, string) {

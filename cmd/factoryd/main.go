@@ -8,20 +8,38 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/ControlStackAI/dark-factory/internal/app"
 	"github.com/ControlStackAI/dark-factory/internal/buildinfo"
 	"github.com/ControlStackAI/dark-factory/internal/config"
+	"github.com/ControlStackAI/dark-factory/internal/domain"
 )
 
 func main() {
-	if err := run(os.Args[1:], os.Stdout, os.Stderr); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	if err := runContext(ctx, os.Args[1:], os.Stdout, os.Stderr); err != nil {
 		fmt.Fprintln(os.Stderr, "factoryd:", err)
 		os.Exit(1)
 	}
 }
 
 func run(args []string, stdout, stderr io.Writer) error {
+	return runContext(context.Background(), args, stdout, stderr)
+}
+
+var runLiveSupervisor = func(ctx context.Context, cfg config.Config) (domain.Run, error) {
+	supervisor, err := app.NewProductionSupervisor(cfg)
+	if err != nil {
+		return domain.Run{}, err
+	}
+	defer supervisor.Close()
+	return supervisor.Run(ctx)
+}
+
+func runContext(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	if len(args) == 1 && (args[0] == "-h" || args[0] == "--help") {
 		fmt.Fprint(stdout, daemonUsage)
 		return nil
@@ -48,19 +66,19 @@ func run(args []string, stdout, stderr io.Writer) error {
 		fmt.Fprintln(stdout, buildinfo.Version)
 		return nil
 	}
-	if !*once {
-		return errors.New("continuous daemon is not implemented until M3; use --once")
-	}
 	configSet := false
 	fs.Visit(func(f *flag.Flag) { configSet = configSet || f.Name == "config" })
 	if *state != "" {
+		if !*once {
+			return errors.New("--state is available only with --once")
+		}
 		if *apply {
 			return errors.New("--state is a credential-free compatibility mode and cannot be combined with --apply")
 		}
 		if configSet {
 			return errors.New("--state and --config are mutually exclusive")
 		}
-		result, err := app.DurableDryRun(context.Background(), *state)
+		result, err := app.DurableDryRun(ctx, *state)
 		if err != nil {
 			return err
 		}
@@ -70,17 +88,34 @@ func run(args []string, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	result, err := op.Once(context.Background(), *apply)
+	if op.Config.Mode != "live" {
+		if *apply {
+			return errors.New("--apply requires config mode live; no external action was taken")
+		}
+		if !*once {
+			return errors.New("continuous factoryd requires config mode live and --apply; no external action was taken")
+		}
+		result, err := op.DryRun(ctx)
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(stdout).Encode(app.SummarizeRun(result))
+	}
+	if !*apply {
+		return errors.New("config mode live requires --apply; no external action was taken")
+	}
+	result, err := runLiveSupervisor(ctx, op.Config)
 	if err != nil {
 		return err
 	}
 	return json.NewEncoder(stdout).Encode(app.SummarizeRun(result))
 }
 
-const daemonUsage = `usage: factoryd --once --config PATH [--apply]
+const daemonUsage = `usage: factoryd --config PATH --apply
+       factoryd --once --config PATH [--apply]
        factoryd --once --state STATE_DB
 
-M2 supports credential-free --once execution. Live execution requires both
-config mode live and --apply, then fails closed until the M3 OpenClaw side exists.
-The --state form preserves the M0 restart-safe credential-free recovery fixture.
+factoryd runs as a foreground continuous supervisor and never daemonizes. Live
+execution requires both config mode live and --apply. SIGTERM performs a bounded
+clean shutdown. The --state form preserves the M0 restart-safe recovery fixture.
 `

@@ -267,6 +267,29 @@ func TestAttemptBudgetBlocksBeforeDispatch(t *testing.T) {
 	}
 }
 
+func TestEachAgentInvocationChargesExactlyOneAttempt(t *testing.T) {
+	tests := []memory.Turn{
+		{Result: domain.TurnResult{Step: "success", Evidence: "successful invocation artifact"}},
+		{Err: errors.New("nonzero process exit")},
+		{Result: domain.TurnResult{Step: "", Evidence: "invalid result artifact"}},
+	}
+	for index, turn := range tests {
+		r := newRig(t, testPolicy(), turn)
+		lease, err := r.controller.AcquireLease(context.Background(), "run-1", "worker")
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = r.controller.ExecuteTurn(context.Background(), "run-1", lease.Fence)
+		run, err := r.controller.Get(context.Background(), "run-1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if run.Attempts != 1 || len(r.agent.Requests()) != 1 {
+			t.Fatalf("case %d attempts=%d invocations=%d", index, run.Attempts, len(r.agent.Requests()))
+		}
+	}
+}
+
 func TestWallClockBudgetRejectsCheckpointAndBlocks(t *testing.T) {
 	policy := testPolicy()
 	policy.MaxRunDuration = 30 * time.Second

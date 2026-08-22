@@ -209,6 +209,7 @@ func (c *Config) Validate(base string) error {
 	add(!strings.ContainsAny(c.OpenClaw.Executable, "\r\n"), "openclaw.executable contains a newline")
 	add(!strings.ContainsRune(c.OpenClaw.Executable, filepath.Separator) || filepath.IsAbs(c.OpenClaw.Executable), "openclaw.executable must be a bare command name or absolute path")
 	add(!strings.ContainsAny(c.OpenClaw.SessionPrefix, " \t\r\n"), "openclaw.session_prefix must not contain whitespace")
+	add(strings.HasPrefix(c.OpenClaw.SessionPrefix, "agent:"+c.OpenClaw.Agent+":"), "openclaw.session_prefix must be scoped to openclaw.agent")
 	if c.OpenClaw.Model != "" {
 		add(strings.TrimSpace(c.OpenClaw.Model) == c.OpenClaw.Model && !strings.ContainsRune(c.OpenClaw.Model, 0), "openclaw.model is invalid")
 	}

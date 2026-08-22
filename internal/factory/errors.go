@@ -9,4 +9,5 @@ var (
 	ErrBudgetExhausted = errors.New("run budget exhausted")
 	ErrReviewRequired  = errors.New("immutable approved review evidence is required")
 	ErrReviewMismatch  = errors.New("review evidence does not match the current issue and artifact")
+	ErrDispatchPending = errors.New("reserved OpenClaw dispatch requires reconciliation or manual resolution")
 )

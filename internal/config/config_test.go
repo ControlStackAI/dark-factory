@@ -126,6 +126,7 @@ func TestValidationBoundaries(t *testing.T) {
 		{"empty-agent", func(c *Config) { c.OpenClaw.Agent = "" }, "openclaw.agent"},
 		{"relative-executable-path", func(c *Config) { c.OpenClaw.Executable = "bin/openclaw" }, "bare command name or absolute path"},
 		{"bad-session", func(c *Config) { c.OpenClaw.SessionPrefix = "not isolated" }, "must not contain whitespace"},
+		{"session-agent-mismatch", func(c *Config) { c.OpenClaw.SessionPrefix = "agent:other:factory" }, "scoped to openclaw.agent"},
 		{"bad-model", func(c *Config) { c.OpenClaw.Model = " model" }, "openclaw.model"},
 		{"zero-timeout", func(c *Config) { c.OpenClaw.Timeout = "0s" }, "positive duration"},
 		{"lease-duration", func(c *Config) { c.Budgets.LeaseDuration = "0s" }, "budgets.lease_duration"},

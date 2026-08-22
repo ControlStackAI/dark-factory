@@ -1,0 +1,165 @@
+=== RUN   TestExecutorArgvPromptIsolationAndArtifact
+--- PASS: TestExecutorArgvPromptIsolationAndArtifact (0.26s)
+=== RUN   TestExecutorFailureMatrixIsBoundedAndRedacted
+=== RUN   TestExecutorFailureMatrixIsBoundedAndRedacted/invalid-json
+=== RUN   TestExecutorFailureMatrixIsBoundedAndRedacted/oversized-stdout
+=== RUN   TestExecutorFailureMatrixIsBoundedAndRedacted/oversized-stderr
+=== RUN   TestExecutorFailureMatrixIsBoundedAndRedacted/nonzero
+=== RUN   TestExecutorFailureMatrixIsBoundedAndRedacted/delayed-timeout
+=== RUN   TestExecutorFailureMatrixIsBoundedAndRedacted/signal-death
+=== RUN   TestExecutorFailureMatrixIsBoundedAndRedacted/deadline-success
+--- PASS: TestExecutorFailureMatrixIsBoundedAndRedacted (1.91s)
+    --- PASS: TestExecutorFailureMatrixIsBoundedAndRedacted/invalid-json (0.24s)
+    --- PASS: TestExecutorFailureMatrixIsBoundedAndRedacted/oversized-stdout (0.29s)
+    --- PASS: TestExecutorFailureMatrixIsBoundedAndRedacted/oversized-stderr (0.24s)
+    --- PASS: TestExecutorFailureMatrixIsBoundedAndRedacted/nonzero (0.26s)
+    --- PASS: TestExecutorFailureMatrixIsBoundedAndRedacted/delayed-timeout (0.30s)
+    --- PASS: TestExecutorFailureMatrixIsBoundedAndRedacted/signal-death (0.23s)
+    --- PASS: TestExecutorFailureMatrixIsBoundedAndRedacted/deadline-success (0.35s)
+=== RUN   TestExecutorTimeoutKillsProcessGroupWithoutChildLeak
+--- PASS: TestExecutorTimeoutKillsProcessGroupWithoutChildLeak (0.27s)
+=== RUN   TestSuccessAlreadyWaitingAtDeadlineWins
+--- PASS: TestSuccessAlreadyWaitingAtDeadlineWins (0.00s)
+=== RUN   TestStrictVersionedResultRejectsUnknownAndWrongVersion
+--- PASS: TestStrictVersionedResultRejectsUnknownAndWrongVersion (0.00s)
+=== RUN   TestResponseArtifactCountIsBounded
+--- PASS: TestResponseArtifactCountIsBounded (0.22s)
+=== RUN   TestResponseSnapshotRejectsSymlinkCollision
+--- PASS: TestResponseSnapshotRejectsSymlinkCollision (0.23s)
+PASS
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/openclaw	2.895s
+=== RUN   TestTwoKeyInterlock
+=== RUN   TestTwoKeyInterlock/dry-no-apply
+=== RUN   TestTwoKeyInterlock/dry-apply
+=== RUN   TestTwoKeyInterlock/live-no-apply
+=== RUN   TestTwoKeyInterlock/live-apply
+--- PASS: TestTwoKeyInterlock (0.00s)
+    --- PASS: TestTwoKeyInterlock/dry-no-apply (0.00s)
+    --- PASS: TestTwoKeyInterlock/dry-apply (0.00s)
+    --- PASS: TestTwoKeyInterlock/live-no-apply (0.00s)
+    --- PASS: TestTwoKeyInterlock/live-apply (0.00s)
+=== RUN   TestDoctorHasSeparateHonestReadiness
+--- PASS: TestDoctorHasSeparateHonestReadiness (0.00s)
+=== RUN   TestStatusDoesNotCreateState
+--- PASS: TestStatusDoesNotCreateState (0.00s)
+=== RUN   TestDurableDryRunReopensWithoutRepeatingWork
+--- PASS: TestDurableDryRunReopensWithoutRepeatingWork (0.06s)
+=== RUN   TestM3RandomizedRestartSoak
+    soak_test.go:60: set DARK_FACTORY_SOAK_DURATION=10m for the retained M3 soak
+--- SKIP: TestM3RandomizedRestartSoak (0.00s)
+=== RUN   TestProductionSupervisorRejectsModelOverrideOutsideExactM3Argv
+--- PASS: TestProductionSupervisorRejectsModelOverrideOutsideExactM3Argv (0.00s)
+=== RUN   TestSingleInstanceDatabaseLockExcludesSecondSupervisor
+--- PASS: TestSingleInstanceDatabaseLockExcludesSecondSupervisor (0.00s)
+=== RUN   TestSupervisorReacquiresExpiredLeaseWithHigherFence
+--- PASS: TestSupervisorReacquiresExpiredLeaseWithHigherFence (0.06s)
+=== RUN   TestSupervisorReconcilesFrozenAdvanceBeforeAnyDispatch
+--- PASS: TestSupervisorReconcilesFrozenAdvanceBeforeAnyDispatch (0.08s)
+=== RUN   TestSupervisorBackoffPreventsBusyLoop
+--- PASS: TestSupervisorBackoffPreventsBusyLoop (0.04s)
+=== RUN   TestSupervisorCleanCancellationRecordsAttemptAndLeavesValidDatabase
+--- PASS: TestSupervisorCleanCancellationRecordsAttemptAndLeavesValidDatabase (0.05s)
+=== RUN   TestSupervisorRestartAfterProcessLossBlocksAmbiguousAttemptWithoutRedispatch
+--- PASS: TestSupervisorRestartAfterProcessLossBlocksAmbiguousAttemptWithoutRedispatch (0.05s)
+=== RUN   TestSupervisorTerminalAttemptBudgetAndWaitForReviewWithoutGrowth
+=== RUN   TestSupervisorTerminalAttemptBudgetAndWaitForReviewWithoutGrowth/budget
+=== RUN   TestSupervisorTerminalAttemptBudgetAndWaitForReviewWithoutGrowth/wait-review
+--- PASS: TestSupervisorTerminalAttemptBudgetAndWaitForReviewWithoutGrowth (0.09s)
+    --- PASS: TestSupervisorTerminalAttemptBudgetAndWaitForReviewWithoutGrowth/budget (0.04s)
+    --- PASS: TestSupervisorTerminalAttemptBudgetAndWaitForReviewWithoutGrowth/wait-review (0.05s)
+PASS
+ok  	github.com/ControlStackAI/dark-factory/internal/app	0.428s
+=== RUN   TestDaemonTwoKeyInterlockAndNoAdapterCall
+=== RUN   TestDaemonTwoKeyInterlockAndNoAdapterCall/dry-no-apply
+=== RUN   TestDaemonTwoKeyInterlockAndNoAdapterCall/dry-apply
+=== RUN   TestDaemonTwoKeyInterlockAndNoAdapterCall/live-no-apply
+=== RUN   TestDaemonTwoKeyInterlockAndNoAdapterCall/live-apply
+--- PASS: TestDaemonTwoKeyInterlockAndNoAdapterCall (0.01s)
+    --- PASS: TestDaemonTwoKeyInterlockAndNoAdapterCall/dry-no-apply (0.00s)
+    --- PASS: TestDaemonTwoKeyInterlockAndNoAdapterCall/dry-apply (0.00s)
+    --- PASS: TestDaemonTwoKeyInterlockAndNoAdapterCall/live-no-apply (0.00s)
+    --- PASS: TestDaemonTwoKeyInterlockAndNoAdapterCall/live-apply (0.00s)
+=== RUN   TestDaemonHelpAndExitContract
+--- PASS: TestDaemonHelpAndExitContract (0.00s)
+=== RUN   TestDaemonDryRunJSONGolden
+--- PASS: TestDaemonDryRunJSONGolden (0.01s)
+=== RUN   TestDaemonDurableStateCompatibility
+--- PASS: TestDaemonDurableStateCompatibility (0.09s)
+=== RUN   TestForegroundDaemonProcessLockStatusAndSIGKILLRestart
+--- PASS: TestForegroundDaemonProcessLockStatusAndSIGKILLRestart (1.79s)
+PASS
+ok  	github.com/ControlStackAI/dark-factory/cmd/factoryd	1.902s
+=== RUN   TestStaleFenceRejectedAfterLeaseReacquisition
+--- PASS: TestStaleFenceRejectedAfterLeaseReacquisition (0.00s)
+=== RUN   TestExpiredLeaseRejected
+--- PASS: TestExpiredLeaseRejected (0.00s)
+=== RUN   TestCompletionRejectedWithoutImmutableReview
+--- PASS: TestCompletionRejectedWithoutImmutableReview (0.00s)
+=== RUN   TestReviewMustBeImmutableAndArtifactUnchanged
+--- PASS: TestReviewMustBeImmutableAndArtifactUnchanged (0.00s)
+=== RUN   TestCompletionDeterministicallyAdvancesIssue
+--- PASS: TestCompletionDeterministicallyAdvancesIssue (0.00s)
+=== RUN   TestAttemptAndFailureBudgetsFailClosed
+--- PASS: TestAttemptAndFailureBudgetsFailClosed (0.00s)
+=== RUN   TestAttemptBudgetBlocksBeforeDispatch
+--- PASS: TestAttemptBudgetBlocksBeforeDispatch (0.00s)
+=== RUN   TestEachAgentInvocationChargesExactlyOneAttempt
+--- PASS: TestEachAgentInvocationChargesExactlyOneAttempt (0.00s)
+=== RUN   TestWallClockBudgetRejectsCheckpointAndBlocks
+--- PASS: TestWallClockBudgetRejectsCheckpointAndBlocks (0.00s)
+=== RUN   TestTurnFinishingAtDeadlineIsRejectedAndBlocks
+--- PASS: TestTurnFinishingAtDeadlineIsRejectedAndBlocks (0.00s)
+=== RUN   TestCompletionDoesNotSelectCurrentReadyIssueAsNext
+--- PASS: TestCompletionDoesNotSelectCurrentReadyIssueAsNext (0.00s)
+=== RUN   TestExpiredWorkerCannotFinalizePendingAdvance
+--- PASS: TestExpiredWorkerCannotFinalizePendingAdvance (0.00s)
+=== RUN   TestConcurrentProgressInvalidatesReviewBeforeAdvanceIsFrozen
+--- PASS: TestConcurrentProgressInvalidatesReviewBeforeAdvanceIsFrozen (0.00s)
+PASS
+ok  	github.com/ControlStackAI/dark-factory/internal/factory	0.003s
+=== RUN   TestReopenAfterPersistedControllerPhases
+--- PASS: TestReopenAfterPersistedControllerPhases (0.15s)
+=== RUN   TestAfterCommitCrashRecoveryAtEveryAdvancementBoundary
+=== RUN   TestAfterCommitCrashRecoveryAtEveryAdvancementBoundary/advance_frozen
+=== RUN   TestAfterCommitCrashRecoveryAtEveryAdvancementBoundary/review_consumed
+=== RUN   TestAfterCommitCrashRecoveryAtEveryAdvancementBoundary/remote_advance_committed
+=== RUN   TestAfterCommitCrashRecoveryAtEveryAdvancementBoundary/advance_reconciled
+--- PASS: TestAfterCommitCrashRecoveryAtEveryAdvancementBoundary (0.33s)
+    --- PASS: TestAfterCommitCrashRecoveryAtEveryAdvancementBoundary/advance_frozen (0.09s)
+    --- PASS: TestAfterCommitCrashRecoveryAtEveryAdvancementBoundary/review_consumed (0.08s)
+    --- PASS: TestAfterCommitCrashRecoveryAtEveryAdvancementBoundary/remote_advance_committed (0.08s)
+    --- PASS: TestAfterCommitCrashRecoveryAtEveryAdvancementBoundary/advance_reconciled (0.08s)
+=== RUN   TestAfterCommitCrashRecoveryAtControllerBoundaries
+=== RUN   TestAfterCommitCrashRecoveryAtControllerBoundaries/run_created
+=== RUN   TestAfterCommitCrashRecoveryAtControllerBoundaries/lease_acquired
+=== RUN   TestAfterCommitCrashRecoveryAtControllerBoundaries/checkpoint_committed
+=== RUN   TestAfterCommitCrashRecoveryAtControllerBoundaries/review_bound
+--- PASS: TestAfterCommitCrashRecoveryAtControllerBoundaries (0.22s)
+    --- PASS: TestAfterCommitCrashRecoveryAtControllerBoundaries/run_created (0.05s)
+    --- PASS: TestAfterCommitCrashRecoveryAtControllerBoundaries/lease_acquired (0.05s)
+    --- PASS: TestAfterCommitCrashRecoveryAtControllerBoundaries/checkpoint_committed (0.06s)
+    --- PASS: TestAfterCommitCrashRecoveryAtControllerBoundaries/review_bound (0.06s)
+=== RUN   TestConcurrentLeaseAcquisitionHasOneWinner
+--- PASS: TestConcurrentLeaseAcquisitionHasOneWinner (0.05s)
+=== RUN   TestStaleFenceRejectedAfterRestart
+--- PASS: TestStaleFenceRejectedAfterRestart (0.06s)
+=== RUN   TestAttemptReservationSurvivesCrashWithoutRedispatch
+--- PASS: TestAttemptReservationSurvivesCrashWithoutRedispatch (0.06s)
+=== RUN   TestBeforeCommitFaultRollsBackAttemptReservation
+--- PASS: TestBeforeCommitFaultRollsBackAttemptReservation (0.05s)
+=== RUN   TestBeforeCommitFaultRollsBackRemoteMutationAtomically
+--- PASS: TestBeforeCommitFaultRollsBackRemoteMutationAtomically (0.08s)
+=== RUN   TestReviewConsumptionIsDurableAndSingleConsumer
+--- PASS: TestReviewConsumptionIsDurableAndSingleConsumer (0.05s)
+=== RUN   TestOpenFailsClosedForCorruptNewerAndInvalidDatabases
+=== RUN   TestOpenFailsClosedForCorruptNewerAndInvalidDatabases/corrupt
+=== RUN   TestOpenFailsClosedForCorruptNewerAndInvalidDatabases/newer_schema
+=== RUN   TestOpenFailsClosedForCorruptNewerAndInvalidDatabases/invalid_record
+=== RUN   TestOpenFailsClosedForCorruptNewerAndInvalidDatabases/unversioned_nonempty
+--- PASS: TestOpenFailsClosedForCorruptNewerAndInvalidDatabases (0.10s)
+    --- PASS: TestOpenFailsClosedForCorruptNewerAndInvalidDatabases/corrupt (0.00s)
+    --- PASS: TestOpenFailsClosedForCorruptNewerAndInvalidDatabases/newer_schema (0.04s)
+    --- PASS: TestOpenFailsClosedForCorruptNewerAndInvalidDatabases/invalid_record (0.05s)
+    --- PASS: TestOpenFailsClosedForCorruptNewerAndInvalidDatabases/unversioned_nonempty (0.01s)
+PASS
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/sqlite	1.157s

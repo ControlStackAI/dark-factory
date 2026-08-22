@@ -21,7 +21,7 @@ func TestTwoKeyInterlock(t *testing.T) {
 		{"dry-no-apply", "dry-run", false, "", true},
 		{"dry-apply", "dry-run", true, "--apply requires config mode live", false},
 		{"live-no-apply", "live", false, "config mode live requires --apply", false},
-		{"live-apply", "live", true, "not implemented until M2/M3", false},
+		{"live-apply", "live", true, "requires the factoryd foreground supervisor", false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

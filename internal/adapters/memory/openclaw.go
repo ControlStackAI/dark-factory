@@ -2,7 +2,9 @@ package memory
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/ControlStackAI/dark-factory/internal/domain"
@@ -32,6 +34,12 @@ func (o *OpenClaw) ExecuteTurn(_ context.Context, request domain.TurnRequest) (d
 	}
 	turn := o.turns[0]
 	o.turns = o.turns[1:]
+	if turn.Err == nil && turn.Result.Step != "" && turn.Result.Evidence != "" && turn.Result.ResponseRef == "" {
+		contents := []byte(turn.Result.Step + "\x00" + turn.Result.Evidence)
+		turn.Result.SessionKey = fmt.Sprintf("memory:%s:%d:%d", request.RunID, request.Attempt, request.Fence)
+		turn.Result.ResponseRef = fmt.Sprintf("memory://openclaw/%s/%d", request.RunID, request.Attempt)
+		turn.Result.ResponseSHA256 = fmt.Sprintf("%x", sha256.Sum256(contents))
+	}
 	return turn.Result, turn.Err
 }
 

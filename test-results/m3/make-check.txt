@@ -1,0 +1,20 @@
+Script started on 2026-08-21 03:57:35-07:00 [COMMAND="make check" <not executed on terminal>]
+go test ./...
+ok  	github.com/ControlStackAI/dark-factory/cmd/factoryctl	0.075s
+ok  	github.com/ControlStackAI/dark-factory/cmd/factoryd	1.659s
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/linear	0.329s
+?   	github.com/ControlStackAI/dark-factory/internal/adapters/memory	[no test files]
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/openclaw	2.539s
+ok  	github.com/ControlStackAI/dark-factory/internal/adapters/sqlite	1.014s
+ok  	github.com/ControlStackAI/dark-factory/internal/app	0.465s
+?   	github.com/ControlStackAI/dark-factory/internal/buildinfo	[no test files]
+ok  	github.com/ControlStackAI/dark-factory/internal/config	0.181s
+ok  	github.com/ControlStackAI/dark-factory/internal/domain	0.003s
+ok  	github.com/ControlStackAI/dark-factory/internal/factory	0.004s
+?   	github.com/ControlStackAI/dark-factory/internal/ports	[no test files]
+go vet ./...
+go build ./...
+go run ./cmd/factoryctl version
+dev
+
+Script done on 2026-08-21 03:57:40-07:00 [COMMAND_EXIT_CODE="0"]

@@ -169,6 +169,11 @@ func appendJournal(ctx context.Context, tx *sql.Tx, runID string, version uint64
 
 func transitionPhases(current, next domain.Run) []string {
 	var phases []string
+	if current.PendingDispatch != nil && next.PendingDispatch == nil {
+		phases = append(phases, "dispatch_recorded")
+	} else if current.PendingDispatch != nil && next.PendingDispatch != nil && current.PendingDispatch.State == domain.DispatchReserved && next.PendingDispatch.State == domain.DispatchStarted {
+		phases = append(phases, "dispatch_started")
+	}
 	switch {
 	case current.PendingAdvance != nil && next.PendingAdvance == nil:
 		phases = append(phases, "advance_reconciled")
@@ -270,14 +275,28 @@ func validateRun(run domain.Run) error {
 			return invalid("has incomplete review binding")
 		}
 	}
+	if run.PendingDispatch != nil {
+		dispatch := run.PendingDispatch
+		if dispatch.Attempt != run.Attempts || dispatch.Attempt < 1 || dispatch.Fence == 0 || dispatch.Fence != run.Lease.Fence || dispatch.ReservedAt.IsZero() ||
+			(dispatch.State != domain.DispatchReserved && dispatch.State != domain.DispatchStarted) ||
+			(dispatch.State == domain.DispatchReserved && !dispatch.StartedAt.IsZero()) || (dispatch.State == domain.DispatchStarted && dispatch.StartedAt.IsZero()) {
+			return invalid("has incomplete or inconsistent pending dispatch")
+		}
+	}
+	if run.LastTurnArtifact != nil {
+		artifact := run.LastTurnArtifact
+		if artifact.Attempt < 1 || artifact.Attempt > run.Attempts || artifact.SessionKey == "" || artifact.ResponseRef == "" || !validDigest(artifact.ResponseSHA256) {
+			return invalid("has incomplete turn artifact")
+		}
+	}
 	if run.PendingAdvance != nil {
 		pending := run.PendingAdvance
 		if pending.CurrentIssueID != run.IssueID || pending.Evidence == "" || pending.ReviewID == "" || pending.IdempotencyKey == "" || run.Review == nil || pending.ReviewID != run.Review.ReviewID {
 			return invalid("has incomplete or inconsistent frozen advancement")
 		}
 	}
-	if run.Status != domain.RunActive && run.PendingAdvance != nil {
-		return invalid("terminal run has a frozen advancement")
+	if run.Status != domain.RunActive && (run.PendingAdvance != nil || run.PendingDispatch != nil) {
+		return invalid("terminal run has pending work")
 	}
 	return nil
 }

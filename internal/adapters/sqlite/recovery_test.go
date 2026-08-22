@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -385,14 +386,23 @@ func TestAttemptReservationSurvivesCrashWithoutRedispatch(t *testing.T) {
 	if run.Attempts != 1 || count != 1 {
 		t.Fatalf("after restart attempts=%d reservations=%d", run.Attempts, count)
 	}
-	secondAgent := memory.NewOpenClaw(memory.Turn{Result: domain.TurnResult{Step: "recovered", Evidence: "second reserved attempt completed"}})
+	secondAgent := memory.NewOpenClaw(memory.Turn{Result: domain.TurnResult{Step: "unsafe", Evidence: "ambiguous attempt must not be dispatched"}})
 	controller = factory.NewWithClock(store, store, secondAgent, store, store, clock)
-	if _, err := controller.ExecuteTurn(ctx, "run-1", lease.Fence); err != nil {
+	if _, err := controller.ExecuteTurn(ctx, "run-1", lease.Fence); !errors.Is(err, factory.ErrDispatchPending) {
+		t.Fatalf("ambiguous ExecuteTurn error = %v", err)
+	}
+	if len(secondAgent.Requests()) != 0 {
+		t.Fatal("ambiguous reserved attempt was redispatched")
+	}
+	if err := controller.BlockAmbiguousDispatch(ctx, "run-1"); err != nil {
 		t.Fatal(err)
 	}
-	requests := secondAgent.Requests()
-	if len(requests) != 1 || requests[0].Attempt != 2 {
-		t.Fatalf("recovery requests = %#v", requests)
+	blocked, err := store.Get(ctx, "run-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if blocked.Status != domain.RunBlocked || blocked.Attempts != 1 || !strings.Contains(blocked.BlockedReason, "manual resolution") {
+		t.Fatalf("ambiguous run = %#v", blocked)
 	}
 }
 

@@ -6,10 +6,10 @@ Linear plus OpenClaw, with the controller—not prompts—enforcing safety and d
 
 ## Status
 
-This repository contains the credential-free controller kernel, the M1 operator surface, and
-the M2 bounded Linear GraphQL adapter. It is not yet a production daemon: the OpenClaw
-executor and continuous supervisor arrive in M3, so configured live execution remains
-deliberately unavailable.
+This repository contains the credential-free controller kernel, the M1 operator surface,
+the M2 bounded Linear GraphQL adapter, and the M3 argv-safe OpenClaw executor plus foreground
+continuous supervisor. Filesystem review-packet import and release packaging remain later
+milestones, so this is not yet a v0.1 release candidate.
 
 Implemented controller invariants include:
 
@@ -21,6 +21,11 @@ Implemented controller invariants include:
 - deterministic advancement by normalized priority, creation time, then Linear identifier;
 - a frozen pending advancement and adapter idempotency key for safe retry;
 - durable attempt reservations, review consumption, and atomic advancement receipts;
+- durable reserved/started dispatch state that blocks ambiguous process-loss replay;
+- private prompt files, bounded independent stdout/stderr capture, strict versioned results,
+  and durable response snapshots;
+- single-instance foreground supervision, bounded backoff, signal-aware shutdown, and
+  reconciliation-before-dispatch;
 - exactly-once local reference mutations after timeout/commit ambiguity;
 - completion gated on approved, immutable, hash-bound, single-consumer review evidence.
 
@@ -58,22 +63,29 @@ process call. Both `factoryctl recover STATE_DB` and the published M0-compatible
 `status`, `dry-run`, and dry-mode `factoryd --once` make no network or executor calls; the M1
 dry run does not create durable live-run state.
 
-Live mode remains deliberately unusable until M3. Both keys are required before the live branch is
-even selected:
+Live mode requires both keys before the production composition is selected:
 
 ```console
 # mode: live without --apply: refused
 go run ./cmd/factoryd --once --config "$config_dir/factory.json"
 
-# mode: live plus --apply: interlock proven, then fails closed
-go run ./cmd/factoryd --once --apply --config "$config_dir/factory.json"
-# live execution is not implemented until M2/M3; no external action was taken
+# foreground continuous supervisor (does not daemonize)
+LINEAR_API_KEY=... go run ./cmd/factoryd --apply --config "$config_dir/factory.json"
 ```
+
+The supervisor executes OpenClaw only as direct argv: `openclaw agent --agent ID
+--session-key KEY --message-file PRIVATE_FILE --json --timeout SECONDS`. It never uses a
+shell, never puts the prompt in argv, and never
+adds delivery/routing flags. `SIGTERM` cancels the bounded child process group, records the
+spent attempt when the lease remains valid, closes SQLite, and exits. A persisted reserved or
+started dispatch after abrupt process loss is never replayed: the run becomes explicitly
+Blocked for manual reconciliation.
 
 `doctor --json` stays offline and reports config, state DB, Linear, OpenClaw, review root,
 artifact root, and service environment separately. `doctor --online` is the sole M2 opt-in
 network diagnostic: it performs bounded, query-only checks of the exact configured Linear
-team, project, issue, and lifecycle states. OpenClaw cannot be ready until M3.
+team, project, issue, and lifecycle states. The offline OpenClaw check only verifies that the
+configured executable is discoverable; it never invokes it.
 
 The Linear adapter completely paginates issues, relationships, lifecycle states, and keyed
 comments; enforces the configured team/project/allowlist; and reconciles each frozen claim or
@@ -98,7 +110,7 @@ make check      # run the local merge gate
 ## Repository Layout
 
 ```text
-cmd/factoryd/              shared-composition --once entry point and live interlock
+cmd/factoryd/              foreground supervisor, --once compatibility, live interlock
 cmd/factoryctl/            init/validate/doctor/dry-run/status operator CLI
 internal/config/           strict config decoding, path policy, and no-replace init
 internal/domain/           state, issue, review, and deterministic selection model
@@ -107,6 +119,7 @@ internal/ports/            Linear, OpenClaw, state, review, and artifact contrac
 internal/adapters/memory/  credential-free adapter implementations and test fakes
 internal/adapters/sqlite/  schema-v1 durable store and local recovery adapter
 internal/adapters/linear/  bounded GraphQL client and strict fake-server tests
+internal/adapters/openclaw/ bounded argv-only executor and fake executable matrix
 internal/app/              executable vertical-slice composition
 ```
 
