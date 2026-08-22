@@ -2,7 +2,9 @@ package app
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -10,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	filesystemadapter "github.com/ControlStackAI/dark-factory/internal/adapters/filesystem"
 	"github.com/ControlStackAI/dark-factory/internal/adapters/memory"
 	durablesqlite "github.com/ControlStackAI/dark-factory/internal/adapters/sqlite"
 	"github.com/ControlStackAI/dark-factory/internal/config"
@@ -212,6 +215,111 @@ func TestSupervisorRejectsReviewForDifferentResponseArtifact(t *testing.T) {
 	}
 }
 
+func TestSupervisorReportsMalformedWantedReviewInsteadOfWaiting(t *testing.T) {
+	rig := newSupervisorRig(t, memory.Turn{Result: goodTurn()})
+	failing := &failingReviewStore{Store: rig.store, err: fmt.Errorf("packet: %w", filesystemadapter.ErrMalformedPacket)}
+	phase := ""
+	supervisor, err := NewSupervisor(SupervisorOptions{
+		Store: failing, Linear: rig.linear, OpenClaw: rig.agent, Claim: func(context.Context, string, string, string) error { return nil },
+		RunID: rig.runID, ProjectID: "project", IssueID: "DF-1", Holder: "worker", Policy: policy(time.Minute, 3, 2),
+		PollInterval: time.Millisecond, InitialBackoff: time.Millisecond, MaxBackoff: 4 * time.Millisecond,
+		OnPhase: func(name string, _ domain.Run) { phase = name },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := supervisor.Run(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "review import failed closed") || phase != "review_import_failed" {
+		t.Fatalf("run=%+v phase=%q error=%v", run, phase, err)
+	}
+	if run.Status != domain.RunActive || run.Attempts != 1 || run.CheckpointSequence != 1 {
+		t.Fatalf("malformed review changed run=%+v", run)
+	}
+}
+
+func TestSupervisorBacksOffTransientReviewStoreFailure(t *testing.T) {
+	rig := newSupervisorRig(t, memory.Turn{Result: goodTurn()})
+	failing := &failingReviewStore{Store: rig.store, err: errors.New("temporary review store failure")}
+	phase := ""
+	sleeps := 0
+	supervisor, err := NewSupervisor(SupervisorOptions{
+		Store: failing, Linear: rig.linear, OpenClaw: rig.agent, Claim: func(context.Context, string, string, string) error { return nil },
+		RunID: rig.runID, ProjectID: "project", IssueID: "DF-1", Holder: "worker", Policy: policy(time.Minute, 3, 2),
+		PollInterval: time.Millisecond, InitialBackoff: time.Millisecond, MaxBackoff: 4 * time.Millisecond,
+		Sleep: func(context.Context, time.Duration) error {
+			sleeps++
+			return context.Canceled
+		},
+		OnPhase: func(name string, _ domain.Run) { phase = name },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := supervisor.Run(context.Background())
+	if err != nil || phase != "review_import_retry" || sleeps != 1 {
+		t.Fatalf("run=%+v phase=%q sleeps=%d error=%v", run, phase, sleeps, err)
+	}
+	if run.Status != domain.RunActive || run.Attempts != 1 || run.CheckpointSequence != 1 {
+		t.Fatalf("transient review failure changed run=%+v", run)
+	}
+}
+
+func TestSupervisorReportsMalformedConsumptionReceipt(t *testing.T) {
+	rig := newSupervisorRig(t, memory.Turn{Result: goodTurn()})
+	turn := goodTurn()
+	digest := fmt.Sprintf("%x", sha256.Sum256([]byte(turn.Step+"\x00"+turn.Evidence)))
+	reviewID := filesystemadapter.ReviewID(rig.runID, "DF-1", 1)
+	failing := &failingCompletionStore{Store: rig.store, review: domain.ReviewEvidence{
+		ID: reviewID, ProjectID: "project", IssueID: "DF-1", Status: domain.ReviewApproved,
+		Immutable: true, ArtifactRef: "memory://openclaw/supervisor-run/1", ArtifactSHA256: digest,
+	}, err: fmt.Errorf("receipt: %w", filesystemadapter.ErrMalformedPacket)}
+	phase := ""
+	supervisor, err := NewSupervisor(SupervisorOptions{
+		Store: failing, Linear: rig.linear, OpenClaw: rig.agent, Claim: func(context.Context, string, string, string) error { return nil },
+		RunID: rig.runID, ProjectID: "project", IssueID: "DF-1", Holder: "worker", Policy: policy(time.Minute, 3, 2),
+		PollInterval: time.Millisecond, InitialBackoff: time.Millisecond, MaxBackoff: 4 * time.Millisecond,
+		OnPhase: func(name string, _ domain.Run) { phase = name },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := supervisor.Run(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "review completion failed closed") || phase != "review_completion_failed" {
+		t.Fatalf("run=%+v phase=%q error=%v", run, phase, err)
+	}
+	if run.Status != domain.RunActive || run.Attempts != 1 || run.Review == nil {
+		t.Fatalf("malformed consumption changed run=%+v", run)
+	}
+}
+
+func TestSupervisorReportsConsumptionConflict(t *testing.T) {
+	rig := newSupervisorRig(t, memory.Turn{Result: goodTurn()})
+	turn := goodTurn()
+	digest := fmt.Sprintf("%x", sha256.Sum256([]byte(turn.Step+"\x00"+turn.Evidence)))
+	reviewID := filesystemadapter.ReviewID(rig.runID, "DF-1", 1)
+	failing := &failingCompletionStore{Store: rig.store, review: domain.ReviewEvidence{
+		ID: reviewID, ProjectID: "project", IssueID: "DF-1", Status: domain.ReviewApproved,
+		Immutable: true, ArtifactRef: "memory://openclaw/supervisor-run/1", ArtifactSHA256: digest,
+	}, err: fmt.Errorf("receipt collision: %w", ports.ErrConflict)}
+	phase := ""
+	supervisor, err := NewSupervisor(SupervisorOptions{
+		Store: failing, Linear: rig.linear, OpenClaw: rig.agent, Claim: func(context.Context, string, string, string) error { return nil },
+		RunID: rig.runID, ProjectID: "project", IssueID: "DF-1", Holder: "worker", Policy: policy(time.Minute, 3, 2),
+		PollInterval: time.Millisecond, InitialBackoff: time.Millisecond, MaxBackoff: 4 * time.Millisecond,
+		OnPhase: func(name string, _ domain.Run) { phase = name },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := supervisor.Run(context.Background())
+	if err == nil || !errors.Is(err, ports.ErrConflict) || !strings.Contains(err.Error(), "review completion failed closed") || phase != "review_completion_failed" {
+		t.Fatalf("run=%+v phase=%q error=%v", run, phase, err)
+	}
+	if run.Status != domain.RunActive || run.Attempts != 1 || run.Review == nil {
+		t.Fatalf("conflicting consumption changed run=%+v", run)
+	}
+}
+
 func TestSupervisorCleanCancellationRecordsAttemptAndLeavesValidDatabase(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "factory.db")
 	store, err := durablesqlite.Open(path)
@@ -410,6 +518,39 @@ func (c *supervisorClock) Advance(duration time.Duration) {
 type failAdvanceOnce struct {
 	ports.Linear
 	fired bool
+}
+
+type failingReviewStore struct {
+	*durablesqlite.Store
+	err error
+}
+
+type failingCompletionStore struct {
+	*durablesqlite.Store
+	review domain.ReviewEvidence
+	err    error
+}
+
+func (s *failingCompletionStore) GetReview(_ context.Context, id string) (domain.ReviewEvidence, error) {
+	if id != s.review.ID {
+		return domain.ReviewEvidence{}, ports.ErrNotFound
+	}
+	return s.review, nil
+}
+
+func (s *failingCompletionStore) SHA256(_ context.Context, ref string) (string, error) {
+	if ref != s.review.ArtifactRef {
+		return "", ports.ErrNotFound
+	}
+	return s.review.ArtifactSHA256, nil
+}
+
+func (s *failingCompletionStore) ConsumeReview(context.Context, string, string, string) error {
+	return s.err
+}
+
+func (s *failingReviewStore) GetReview(context.Context, string) (domain.ReviewEvidence, error) {
+	return domain.ReviewEvidence{}, s.err
 }
 
 func (f *failAdvanceOnce) Advance(ctx context.Context, request domain.AdvanceRequest) error {

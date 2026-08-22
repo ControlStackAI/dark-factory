@@ -80,6 +80,7 @@ type Lifecycle struct {
 type Limits struct {
 	MaxOutputBytes   int64 `json:"max_output_bytes"`
 	MaxArtifactBytes int64 `json:"max_artifact_bytes"`
+	MaxPacketBytes   int64 `json:"max_packet_bytes"`
 	MaxArtifacts     int   `json:"max_artifacts"`
 }
 
@@ -119,7 +120,7 @@ func Default(configPath string) (Config, error) {
 		OpenClaw:  OpenClaw{Executable: "openclaw", Agent: "main", SessionPrefix: "agent:main:dark-factory", Timeout: "15m", Delivery: false},
 		Budgets:   Budgets{LeaseDuration: "2m", MaxAttempts: 8, MaxConsecutiveFailures: 3, MaxRunDuration: "24h", PollInterval: "5s", InitialBackoff: "1s", MaxBackoff: "1m", ShutdownTimeout: "30s"},
 		Lifecycle: Lifecycle{Ready: "Ready", InProgress: "In Progress", Done: "Done"},
-		Limits:    Limits{MaxOutputBytes: 1 << 20, MaxArtifactBytes: 64 << 20, MaxArtifacts: 256},
+		Limits:    Limits{MaxOutputBytes: 1 << 20, MaxArtifactBytes: 64 << 20, MaxPacketBytes: 256 << 20, MaxArtifacts: 256},
 	}, nil
 }
 
@@ -228,9 +229,20 @@ func (c *Config) Validate(base string) error {
 	add(parsed["budgets.max_backoff"] >= parsed["budgets.initial_backoff"], "budgets.max_backoff must be at least initial_backoff")
 	add(c.Budgets.MaxAttempts >= 1 && c.Budgets.MaxAttempts <= 1000, "budgets.max_attempts must be between 1 and 1000")
 	add(c.Budgets.MaxConsecutiveFailures >= 1 && c.Budgets.MaxConsecutiveFailures <= c.Budgets.MaxAttempts, "budgets.max_consecutive_failures must be between 1 and max_attempts")
+	if c.Limits.MaxPacketBytes == 0 {
+		c.Limits.MaxPacketBytes = 256 << 20
+		if c.Limits.MaxArtifactBytes > c.Limits.MaxPacketBytes {
+			c.Limits.MaxPacketBytes = c.Limits.MaxArtifactBytes
+		}
+	}
+	if c.Limits.MaxArtifacts >= 1 && c.Limits.MaxArtifacts < 4 {
+		c.Limits.MaxArtifacts = 4
+	}
 	add(c.Limits.MaxOutputBytes >= 1024 && c.Limits.MaxOutputBytes <= 16<<20, "limits.max_output_bytes must be between 1024 and 16777216")
 	add(c.Limits.MaxArtifactBytes >= 1024 && c.Limits.MaxArtifactBytes <= 1<<30, "limits.max_artifact_bytes must be between 1024 and 1073741824")
-	add(c.Limits.MaxArtifacts >= 1 && c.Limits.MaxArtifacts <= 10000, "limits.max_artifacts must be between 1 and 10000")
+	add(c.Limits.MaxPacketBytes >= 4096 && c.Limits.MaxPacketBytes <= 1<<30, "limits.max_packet_bytes must be between 4096 and 1073741824")
+	add(c.Limits.MaxPacketBytes >= c.Limits.MaxArtifactBytes, "limits.max_packet_bytes must be at least max_artifact_bytes")
+	add(c.Limits.MaxArtifacts >= 4 && c.Limits.MaxArtifacts <= 10000, "limits.max_artifacts must be between 4 and 10000")
 	seen := map[string]bool{}
 	for _, issue := range c.Scope.IssueAllowlist {
 		add(strings.TrimSpace(issue) != "", "scope.issue_allowlist contains an empty issue ID")

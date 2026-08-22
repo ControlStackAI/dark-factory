@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	filesystemadapter "github.com/ControlStackAI/dark-factory/internal/adapters/filesystem"
 	linearadapter "github.com/ControlStackAI/dark-factory/internal/adapters/linear"
 	"github.com/ControlStackAI/dark-factory/internal/app"
 	"github.com/ControlStackAI/dark-factory/internal/buildinfo"
@@ -135,9 +136,64 @@ func run(args []string, stdout, stderr io.Writer) error {
 			return err
 		}
 		return writeJSON(stdout, run)
+	case "packet":
+		return packetCommand(args[1:], stdout, stderr)
 	default:
 		return fmt.Errorf("unknown command %q\n%s", args[0], usageText)
 	}
+}
+
+type packetReport struct {
+	PacketDigest       string   `json:"packet_digest"`
+	SourceDigest       string   `json:"source_digest"`
+	ReviewID           string   `json:"review_id"`
+	RunID              string   `json:"run_id"`
+	CheckpointSequence uint64   `json:"checkpoint_sequence"`
+	ChangedFiles       []string `json:"changed_files"`
+	Status             string   `json:"status"`
+	Path               string   `json:"path"`
+}
+
+func packetCommand(args []string, stdout, stderr io.Writer) error {
+	if len(args) == 0 || (args[0] != "verify" && args[0] != "finalize") {
+		return errors.New("usage: factoryctl packet <verify|finalize> --config PATH --packet PATH")
+	}
+	operation := args[0]
+	fs := newFlagSet("packet "+operation, stderr)
+	configPath := fs.String("config", config.DefaultPath(), "configuration path")
+	packetPath := fs.String("packet", "", "packet directory path")
+	jsonOutput := fs.Bool("json", false, "emit stable JSON")
+	if err := fs.Parse(args[1:]); err != nil {
+		return err
+	}
+	if fs.NArg() != 0 || *packetPath == "" {
+		return errors.New("usage: factoryctl packet <verify|finalize> --config PATH --packet PATH")
+	}
+	cfg, err := config.Load(*configPath, config.LoadOptions{})
+	if err != nil {
+		return err
+	}
+	limits := filesystemadapter.Limits{MaxMemberBytes: cfg.Limits.MaxArtifactBytes, MaxPacketBytes: cfg.Limits.MaxPacketBytes, MaxMembers: cfg.Limits.MaxArtifacts}
+	var verified filesystemadapter.VerifiedPacket
+	finalPath := *packetPath
+	if operation == "finalize" {
+		finalPath, verified, err = filesystemadapter.FinalizePacket(context.Background(), cfg.Paths.ReviewRoot, *packetPath, cfg.Paths.WorkspaceRoot, limits)
+	} else {
+		verified, err = filesystemadapter.VerifyPacket(context.Background(), *packetPath, filesystemadapter.VerifyOptions{
+			Workspace: cfg.Paths.WorkspaceRoot, Limits: limits, ExpectedUID: os.Geteuid(),
+		})
+	}
+	if err != nil {
+		return err
+	}
+	report := packetReport{PacketDigest: verified.Digest, SourceDigest: verified.SourceDigest, ReviewID: verified.Manifest.ReviewID,
+		RunID: verified.Manifest.RunID, CheckpointSequence: verified.Manifest.CheckpointSequence,
+		ChangedFiles: append([]string(nil), verified.Manifest.Source.ChangedFiles...), Status: "verified", Path: finalPath}
+	if *jsonOutput {
+		return writeJSON(stdout, report)
+	}
+	fmt.Fprintf(stdout, "verified packet=%s source=%s path=%s\n", report.PacketDigest, report.SourceDigest, report.Path)
+	return nil
 }
 
 type linearProbe interface {
@@ -206,6 +262,7 @@ Commands:
   dry-run    execute the credential-free in-memory composition
   status     inspect state presence without opening or mutating the database
   recover    execute or resume the M0 credential-free SQLite recovery fixture
+  packet     independently verify or atomically finalize a review packet
   version    print the version
   help       show this help
 

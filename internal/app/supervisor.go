@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	filesystemadapter "github.com/ControlStackAI/dark-factory/internal/adapters/filesystem"
 	linearadapter "github.com/ControlStackAI/dark-factory/internal/adapters/linear"
 	openclawadapter "github.com/ControlStackAI/dark-factory/internal/adapters/openclaw"
 	durablesqlite "github.com/ControlStackAI/dark-factory/internal/adapters/sqlite"
@@ -199,6 +200,14 @@ func (s *Supervisor) Run(ctx context.Context) (domain.Run, error) {
 				continue
 			}
 			if err != nil {
+				if ctx.Err() != nil {
+					return s.currentWithoutCanceledContext(), nil
+				}
+				if errors.Is(err, filesystemadapter.ErrMalformedPacket) || errors.Is(err, ports.ErrConflict) {
+					s.phase("review_import_failed", run)
+					return run, fmt.Errorf("review import failed closed: %w", err)
+				}
+				s.phase("review_import_retry", run)
 				if sleepErr := s.options.Sleep(ctx, backoff); sleepErr != nil {
 					return s.currentWithoutCanceledContext(), nil
 				}
@@ -216,6 +225,13 @@ func (s *Supervisor) Run(ctx context.Context) (domain.Run, error) {
 		}
 		evidence := fmt.Sprintf("review %s approved response artifact %s", run.Review.ReviewID, run.LastTurnArtifact.ResponseSHA256)
 		if _, err := s.controller.CompleteAndAdvance(ctx, run.ID, fence, evidence); err != nil {
+			if ctx.Err() != nil {
+				return s.currentWithoutCanceledContext(), nil
+			}
+			if errors.Is(err, filesystemadapter.ErrMalformedPacket) || errors.Is(err, ports.ErrConflict) {
+				s.phase("review_completion_failed", run)
+				return run, fmt.Errorf("review completion failed closed: %w", err)
+			}
 			if sleepErr := s.options.Sleep(ctx, backoff); sleepErr != nil {
 				return s.currentWithoutCanceledContext(), nil
 			}
@@ -258,7 +274,7 @@ func (s *Supervisor) currentWithoutCanceledContext() domain.Run {
 }
 
 func ReviewID(run domain.Run) string {
-	return fmt.Sprintf("review:%s:%s:%d", run.ID, run.IssueID, run.CheckpointSequence)
+	return filesystemadapter.ReviewID(run.ID, run.IssueID, run.CheckpointSequence)
 }
 
 func StableRunID(cfg config.Config) string {
@@ -310,8 +326,18 @@ func NewProductionSupervisor(cfg config.Config) (*Supervisor, error) {
 	if err != nil {
 		return nil, err
 	}
-	store, err := durablesqlite.Open(cfg.Paths.StateDB)
+	sqliteStore, err := durablesqlite.Open(cfg.Paths.StateDB)
 	if err != nil {
+		_ = lock.Close()
+		return nil, err
+	}
+	store, err := filesystemadapter.Open(filesystemadapter.Options{
+		PacketRoot: cfg.Paths.ReviewRoot, StateRoot: cfg.Paths.StateRoot, WorkspaceRoot: cfg.Paths.WorkspaceRoot,
+		Limits:  filesystemadapter.Limits{MaxMemberBytes: cfg.Limits.MaxArtifactBytes, MaxPacketBytes: cfg.Limits.MaxPacketBytes, MaxMembers: cfg.Limits.MaxArtifacts},
+		Backend: sqliteStore, ExpectedUID: os.Geteuid(),
+	})
+	if err != nil {
+		_ = sqliteStore.Close()
 		_ = lock.Close()
 		return nil, err
 	}

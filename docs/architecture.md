@@ -156,10 +156,54 @@ child environment before exec; it is available only to the controller's Linear a
 `factoryd` owns a nonblocking advisory lock next to the configured database and remains in the
 foreground. It resumes the one configured durable run, reacquires expired leases with a higher
 fence, handles pending advancement before claims or turns, reserves before execution, polls
-the durable review store without increasing attempts, and uses bounded exponential backoff.
+the filesystem review adapter without increasing attempts, and uses bounded exponential backoff.
 The OpenClaw timeout is capped below the configured lease by the shutdown allowance and a
 safety margin, preserving the rule that only an accepted result renews a lease. `SIGTERM` is
 context-driven and does not daemonize or depend on a lane-owned background child.
+
+## M4 review-packet boundary
+
+The production evidence boundary wraps the SQLite store with a Linux filesystem adapter.
+Submitted packets are canonical, flat, content-addressed directories finalized by an atomic
+no-replace rename. The adapter treats directory names, manifest fields, permissions, and
+reviewer assertions as untrusted. Directory-relative `O_NOFOLLOW` opens plus before/after
+`fstat` checks reject links, nonregular objects, ownership/mode violations, concurrent file or
+directory changes, and hard-link surprises. Exact membership, per-member/aggregate byte and
+count limits, 64-level canonical JSON, and every SHA-256 are recomputed.
+
+Git source inspection runs without a shell and disables hooks, external diffs, text conversion,
+optional locks, ambient system/global configuration, system attributes, environment-injected
+config entries, diff/pathspec environment variables, and line-ending conversion. It securely
+reads raw worktree bytes and types without following path components, independently hashes them
+as Git blobs, then writes only changed blobs to a private temporary object database and synthetic
+index. Git diffs that immutable index—not live paths—against the resolved commit. Clean/process
+filters therefore cannot hide a tracked payload or transform emitted evidence. Every ignored or
+untracked regular file is discovered by an independent filesystem walk; untracked links, FIFOs,
+sockets/devices, multiply linked files, and nested repositories fail before any diff command.
+Deletion, executable mode, and tracked symlink-target changes are represented. Submodules,
+unmerged/sparse or unusual index entries, and unsupported Git object formats fail closed; SHA-1
+and SHA-256 repositories are supported deliberately. Raw changed bytes and the final diff share
+the configured member bound; path count and total tracked scan bytes are separately capped.
+Repository config and per-worktree `info/attributes` paths have draining inotify guards that fail
+on every target event, queue overflow, or truncated event. `info/attributes` must remain absent or
+empty, and repository-local config includes are rejected because the included files would be
+outside those guards. Working-tree `.gitattributes` bytes are captured into the synthetic index before diffing,
+so transient later edits cannot alter the immutable diff input. Import requires the exact `HEAD`
+commit, raw full-index binary-capable diff, and changed-file set. Review metadata must bind
+the exact project, issue, run, checkpoint, source, and response artifact, explicitly approve,
+list performed checks, and name an author and reviewer whose provider and model both differ.
+
+Verified bytes are staged and fsynced through anchored directory descriptors, source-rechecked
+at the install boundary, renamed without replacement, and verified again under the controller's
+private state root before SQLite records the artifact or immutable review. This copied snapshot—not
+the submitted path—is the artifact implementation rehashed by the controller. SQLite remains
+the atomic single-consumer boundary and journal source. A canonical pre-consumption intent plus
+final filesystem receipt preserve the packet/source digests and original run/fence across a
+crash or later lease reacquisition. An unconsumed lower-fence intent is safely replaced at the
+current fence, while a post-commit intent keeps its original fence and any future-fence intent
+fails closed. A crash on either side of snapshot, consumption, or receipt acknowledgement
+converges idempotently. See
+`docs/review-packets.md` for the wire format.
 
 ## Current Limitations
 
@@ -168,13 +212,13 @@ context-driven and does not daemonize or depend on a lane-owned background child
 - Linear cannot atomically complete one issue and adopt another. SQLite freezes controller
   intent; independently reconcilable remote suboperations and final verification make restart
   convergence honest but cannot eliminate temporary partial Linear state.
-- M3 polls the existing durable review store. Untrusted filesystem packet validation/import is
-  deliberately deferred to M4; response snapshots alone cannot authorize completion.
+- M4 supports a private local Linux filesystem only. Network filesystems, remote object stores,
+  cross-uid packet submission, and cryptographic proof of claimed model identity are not supported.
 - The phase journal is append-only in schema v1; retention, compaction, and archive growth
   monitoring are not implemented yet. Startup validation scans durable records and will grow
   more expensive with database size.
 - Online backup, multi-controller replication, historical migrations, observability,
-  configuration, workflow/skill packaging, and signed release
+  workflow/skill packaging, and signed release
   artifacts remain future milestones.
 
 These limitations are intentional: this milestone establishes an executable safety kernel

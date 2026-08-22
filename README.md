@@ -7,9 +7,9 @@ Linear plus OpenClaw, with the controller—not prompts—enforcing safety and d
 ## Status
 
 This repository contains the credential-free controller kernel, the M1 operator surface,
-the M2 bounded Linear GraphQL adapter, and the M3 argv-safe OpenClaw executor plus foreground
-continuous supervisor. Filesystem review-packet import and release packaging remain later
-milestones, so this is not yet a v0.1 release candidate.
+the M2 bounded Linear GraphQL adapter, the M3 argv-safe OpenClaw executor plus foreground
+continuous supervisor, and the M4 filesystem review-packet importer. Forced-restart release
+composition and packaging remain later milestones, so this is not yet a v0.1 release candidate.
 
 Implemented controller invariants include:
 
@@ -27,9 +27,17 @@ Implemented controller invariants include:
 - single-instance foreground supervision, bounded backoff, signal-aware shutdown, and
   reconciliation-before-dispatch;
 - exactly-once local reference mutations after timeout/commit ambiguity;
-- completion gated on approved, immutable, hash-bound, single-consumer review evidence.
+- completion gated on approved, immutable, hash-bound, single-consumer review evidence;
+- canonical content-addressed review packets with descriptor-relative no-follow reads;
+- independently recomputed Git commit plus a filter-independent raw worktree snapshot and
+  full-index binary diff; every ignored/untracked regular file is bound, while untracked links,
+  FIFOs, sockets/devices, hard links, and nested repositories fail closed before diffing;
+  raw bytes, scan bytes, diff bytes, paths, packet members, and packet totals are bounded;
+- different-provider/different-model review enforcement, controller-owned snapshots, and
+  atomic run/fence-bound consumption intents and receipts.
 
-See [docs/architecture.md](docs/architecture.md) for the boundaries and transition model.
+See [docs/architecture.md](docs/architecture.md) for the boundaries and transition model and
+[docs/review-packets.md](docs/review-packets.md) for the exact M4 packet/receipt contract.
 
 ## Quick Start
 
@@ -94,6 +102,20 @@ complete-and-adopt transaction. A crash may expose temporary partial remote stat
 restart using the same frozen intent converges without duplicate controller comments or a
 different next issue.
 
+Review packets are finalized and independently verified without credentials or network access:
+
+```console
+go run ./cmd/factoryctl packet finalize --config "$config_dir/factory.json" \
+  --packet "$config_dir/reviews/.pending-123" --json
+go run ./cmd/factoryctl packet verify --config "$config_dir/factory.json" \
+  --packet "$config_dir/reviews/packet-<digest>" --json
+```
+
+The daemon ignores `.pending-*` directories. A bounded manifest that claims the wanted review
+is fully verified, so a malformed wanted packet is observable. Foreign claims and unattributable
+JSON are skipped and can never become approval. Accepted bytes are copied into the private state root before
+SQLite can expose the review; source packet modes and names are not treated as immutability.
+
 Available development commands:
 
 ```console
@@ -120,6 +142,7 @@ internal/adapters/memory/  credential-free adapter implementations and test fake
 internal/adapters/sqlite/  schema-v1 durable store and local recovery adapter
 internal/adapters/linear/  bounded GraphQL client and strict fake-server tests
 internal/adapters/openclaw/ bounded argv-only executor and fake executable matrix
+internal/adapters/filesystem/ strict packet verification, snapshot, and receipt adapter
 internal/app/              executable vertical-slice composition
 ```
 

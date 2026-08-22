@@ -27,7 +27,7 @@ func TestDefaultCoversM1FieldsAndValidates(t *testing.T) {
 	if cfg.Budgets.LeaseDuration == "" || cfg.Budgets.MaxAttempts == 0 || cfg.Budgets.MaxConsecutiveFailures == 0 || cfg.Budgets.MaxRunDuration == "" || cfg.Budgets.PollInterval == "" || cfg.Budgets.InitialBackoff == "" || cfg.Budgets.MaxBackoff == "" || cfg.Budgets.ShutdownTimeout == "" {
 		t.Fatal("budget defaults are incomplete")
 	}
-	if cfg.Lifecycle.Ready == "" || cfg.Lifecycle.InProgress == "" || cfg.Lifecycle.Done == "" || cfg.Limits.MaxOutputBytes == 0 || cfg.Limits.MaxArtifactBytes == 0 || cfg.Limits.MaxArtifacts == 0 {
+	if cfg.Lifecycle.Ready == "" || cfg.Lifecycle.InProgress == "" || cfg.Lifecycle.Done == "" || cfg.Limits.MaxOutputBytes == 0 || cfg.Limits.MaxArtifactBytes == 0 || cfg.Limits.MaxPacketBytes == 0 || cfg.Limits.MaxArtifacts == 0 {
 		t.Fatal("lifecycle/limit defaults are incomplete")
 	}
 	loaded, err := Load(path, LoadOptions{RequireSecret: true})
@@ -73,6 +73,36 @@ func TestSimpleYAMLLoadsStrictly(t *testing.T) {
 	}
 	if loaded.ConfigVersion != 1 || loaded.Scope.TeamID != cfg.Scope.TeamID || len(loaded.Paths.AllowedRoots) != 2 {
 		t.Fatalf("unexpected load: %+v", loaded)
+	}
+}
+
+func TestPreM4SchemaOneConfigDerivesPacketLimit(t *testing.T) {
+	path, cfg := newConfig(t)
+	doc := strings.Replace(yamlDocument(cfg), "  max_packet_bytes: 268435456\n", "", 1)
+	writeDocument(t, path, doc)
+	loaded, err := Load(path, LoadOptions{RequireSecret: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loaded.Limits.MaxPacketBytes != 256<<20 {
+		t.Fatalf("derived max_packet_bytes=%d", loaded.Limits.MaxPacketBytes)
+	}
+}
+
+func TestPreM4SchemaOneConfigRaisesArtifactSlots(t *testing.T) {
+	for _, slots := range []int{1, 2, 3} {
+		t.Run(fmt.Sprint(slots), func(t *testing.T) {
+			path, cfg := newConfig(t)
+			doc := strings.Replace(yamlDocument(cfg), "  max_artifacts: 256\n", fmt.Sprintf("  max_artifacts: %d\n", slots), 1)
+			writeDocument(t, path, doc)
+			loaded, err := Load(path, LoadOptions{RequireSecret: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if loaded.Limits.MaxArtifacts != 4 {
+				t.Fatalf("derived max_artifacts=%d", loaded.Limits.MaxArtifacts)
+			}
+		})
 	}
 }
 
@@ -144,6 +174,9 @@ func TestValidationBoundaries(t *testing.T) {
 		{"output-max", func(c *Config) { c.Limits.MaxOutputBytes = (16 << 20) + 1 }, "max_output_bytes"},
 		{"artifact-min", func(c *Config) { c.Limits.MaxArtifactBytes = 1023 }, "max_artifact_bytes"},
 		{"artifact-max", func(c *Config) { c.Limits.MaxArtifactBytes = (1 << 30) + 1 }, "max_artifact_bytes"},
+		{"packet-min", func(c *Config) { c.Limits.MaxPacketBytes = 4095 }, "max_packet_bytes"},
+		{"packet-max", func(c *Config) { c.Limits.MaxPacketBytes = (1 << 30) + 1 }, "max_packet_bytes"},
+		{"packet-below-member", func(c *Config) { c.Limits.MaxPacketBytes = c.Limits.MaxArtifactBytes - 1 }, "at least max_artifact_bytes"},
 		{"artifact-count-min", func(c *Config) { c.Limits.MaxArtifacts = 0 }, "max_artifacts"},
 		{"artifact-count-max", func(c *Config) { c.Limits.MaxArtifacts = 10001 }, "max_artifacts"},
 		{"lifecycle", func(c *Config) { c.Lifecycle.Done = "" }, "lifecycle.done"},
@@ -176,8 +209,10 @@ func TestValidationAcceptsExactBoundaries(t *testing.T) {
 		{"output-min", func(c *Config) { c.Limits.MaxOutputBytes = 1024 }},
 		{"output-max", func(c *Config) { c.Limits.MaxOutputBytes = 16 << 20 }},
 		{"artifact-min", func(c *Config) { c.Limits.MaxArtifactBytes = 1024 }},
-		{"artifact-max", func(c *Config) { c.Limits.MaxArtifactBytes = 1 << 30 }},
-		{"artifact-count-min", func(c *Config) { c.Limits.MaxArtifacts = 1 }},
+		{"artifact-max", func(c *Config) { c.Limits.MaxArtifactBytes = 1 << 30; c.Limits.MaxPacketBytes = 1 << 30 }},
+		{"packet-min", func(c *Config) { c.Limits.MaxArtifactBytes = 1024; c.Limits.MaxPacketBytes = 4096 }},
+		{"packet-max", func(c *Config) { c.Limits.MaxPacketBytes = 1 << 30 }},
+		{"artifact-count-min", func(c *Config) { c.Limits.MaxArtifacts = 4 }},
 		{"artifact-count-max", func(c *Config) { c.Limits.MaxArtifacts = 10000 }},
 		{"openclaw-timeout", func(c *Config) { c.OpenClaw.Timeout = "1ns" }},
 		{"lease-duration", func(c *Config) { c.Budgets.LeaseDuration = "1ns" }},
@@ -533,7 +568,7 @@ func mustJSON(t *testing.T, value any) string {
 
 func yamlDocument(c Config) string {
 	q := func(value string) string { b, _ := json.Marshal(value); return string(b) }
-	return "config_version: 1\nmode: dry-run\npaths:\n  state_db: " + q(c.Paths.StateDB) + "\n  state_root: " + q(c.Paths.StateRoot) + "\n  artifact_root: " + q(c.Paths.ArtifactRoot) + "\n  review_root: " + q(c.Paths.ReviewRoot) + "\n  workspace_root: " + q(c.Paths.WorkspaceRoot) + "\n  allowed_roots:\n    - " + q(c.Paths.AllowedRoots[0]) + "\n    - " + q(c.Paths.AllowedRoots[1]) + "\nscope:\n  team_id: TEAM_ID\n  project_id: PROJECT_ID\n  issue_id: ISSUE_ID\n  issue_allowlist: []\nlinear:\n  endpoint: https://api.linear.app/graphql\n  api_key: env:LINEAR_API_KEY\nopenclaw:\n  executable: openclaw\n  agent: main\n  session_prefix: agent:main:dark-factory\n  model: \"\"\n  timeout: 15m\n  delivery: false\nbudgets:\n  lease_duration: 2m\n  max_attempts: 8\n  max_consecutive_failures: 3\n  max_run_duration: 24h\n  poll_interval: 5s\n  initial_backoff: 1s\n  max_backoff: 1m\n  shutdown_timeout: 30s\nlifecycle:\n  ready: Ready\n  in_progress: In Progress\n  done: Done\nlimits:\n  max_output_bytes: 1048576\n  max_artifact_bytes: 67108864\n  max_artifacts: 256\n"
+	return "config_version: 1\nmode: dry-run\npaths:\n  state_db: " + q(c.Paths.StateDB) + "\n  state_root: " + q(c.Paths.StateRoot) + "\n  artifact_root: " + q(c.Paths.ArtifactRoot) + "\n  review_root: " + q(c.Paths.ReviewRoot) + "\n  workspace_root: " + q(c.Paths.WorkspaceRoot) + "\n  allowed_roots:\n    - " + q(c.Paths.AllowedRoots[0]) + "\n    - " + q(c.Paths.AllowedRoots[1]) + "\nscope:\n  team_id: TEAM_ID\n  project_id: PROJECT_ID\n  issue_id: ISSUE_ID\n  issue_allowlist: []\nlinear:\n  endpoint: https://api.linear.app/graphql\n  api_key: env:LINEAR_API_KEY\nopenclaw:\n  executable: openclaw\n  agent: main\n  session_prefix: agent:main:dark-factory\n  model: \"\"\n  timeout: 15m\n  delivery: false\nbudgets:\n  lease_duration: 2m\n  max_attempts: 8\n  max_consecutive_failures: 3\n  max_run_duration: 24h\n  poll_interval: 5s\n  initial_backoff: 1s\n  max_backoff: 1m\n  shutdown_timeout: 30s\nlifecycle:\n  ready: Ready\n  in_progress: In Progress\n  done: Done\nlimits:\n  max_output_bytes: 1048576\n  max_artifact_bytes: 67108864\n  max_packet_bytes: 268435456\n  max_artifacts: 256\n"
 }
 
 type fakeInfo struct {

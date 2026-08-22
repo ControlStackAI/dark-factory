@@ -8,11 +8,13 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
 
+	filesystemadapter "github.com/ControlStackAI/dark-factory/internal/adapters/filesystem"
 	"github.com/ControlStackAI/dark-factory/internal/config"
 )
 
@@ -195,6 +197,95 @@ func TestHelpAndExitContract(t *testing.T) {
 		if err := run(args, &out, &stderr); err == nil {
 			t.Fatalf("%v unexpectedly succeeded", args)
 		}
+	}
+}
+
+func TestPacketFinalizeAndIndependentVerifyCommands(t *testing.T) {
+	path, cfg := initializedConfig(t)
+	workspace := filepath.Join(filepath.Dir(path), "packet-workspace")
+	if err := os.Mkdir(workspace, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	command := func(args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = workspace
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v: %s", args, err, output)
+		}
+	}
+	command("init", "-q")
+	if err := os.WriteFile(filepath.Join(workspace, "base.txt"), []byte("base\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	command("add", "base.txt")
+	command("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "base")
+	if err := os.WriteFile(filepath.Join(workspace, "candidate.txt"), []byte("candidate\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg.Paths.WorkspaceRoot = workspace
+	cfg.Paths.AllowedRoots = append(cfg.Paths.AllowedRoots, workspace)
+	rewriteConfig(t, path, cfg)
+	state, err := filesystemadapter.InspectSource(context.Background(), workspace)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sourceDigest, err := filesystemadapter.SourceDigest(state.Claim)
+	if err != nil {
+		t.Fatal(err)
+	}
+	artifact := []byte("response\n")
+	receipt := filesystemadapter.ReviewReceipt{ReceiptVersion: 1, ReviewID: "review:run-cli:ISSUE_ID:1", ProjectID: "PROJECT_ID", IssueID: "ISSUE_ID", RunID: "run-cli", CheckpointSequence: 1,
+		SourceCommit: state.Claim.Commit, SourceDigest: sourceDigest, ArtifactPath: "response.json", ArtifactSHA256: fmt.Sprintf("%x", sha256.Sum256(artifact)), Verdict: "approved",
+		Checks: []string{"go test ./..."}, Author: filesystemadapter.Identity{Provider: "openai", Model: "author"}, Reviewer: filesystemadapter.Identity{Provider: "google", Model: "reviewer"}}
+	reviewBytes, err := filesystemadapter.CanonicalReviewReceipt(receipt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := map[string][]byte{"response.json": artifact, "review.json": reviewBytes, "source.diff": state.Diff, "tests.txt": []byte("pass\n")}
+	members := []filesystemadapter.Member{{Path: "response.json", Kind: "artifact"}, {Path: "review.json", Kind: "review_receipt"}, {Path: "source.diff", Kind: "source_diff"}, {Path: "tests.txt", Kind: "test_receipt"}}
+	for index := range members {
+		members[index].Size = int64(len(files[members[index].Path]))
+		members[index].SHA256 = fmt.Sprintf("%x", sha256.Sum256(files[members[index].Path]))
+	}
+	manifest := filesystemadapter.Manifest{PacketVersion: 1, ReviewID: receipt.ReviewID, ProjectID: receipt.ProjectID, IssueID: receipt.IssueID, RunID: receipt.RunID, CheckpointSequence: 1, Source: state.Claim, Members: members}
+	manifestBytes, err := filesystemadapter.CanonicalManifest(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pending, err := os.MkdirTemp(cfg.Paths.ReviewRoot, ".pending-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(pending, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	files[filesystemadapter.ManifestName] = manifestBytes
+	for name, contents := range files {
+		if err := os.WriteFile(filepath.Join(pending, name), contents, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var out, stderr bytes.Buffer
+	if err := run([]string{"packet", "finalize", "--config", path, "--packet", pending, "--json"}, &out, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	var finalized packetReport
+	if err := json.Unmarshal(out.Bytes(), &finalized); err != nil {
+		t.Fatal(err)
+	}
+	if finalized.Status != "verified" || finalized.PacketDigest == "" || finalized.SourceDigest != sourceDigest {
+		t.Fatalf("report=%+v", finalized)
+	}
+	out.Reset()
+	if err := run([]string{"packet", "verify", "--config", path, "--packet", finalized.Path, "--json"}, &out, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	var verified packetReport
+	if err := json.Unmarshal(out.Bytes(), &verified); err != nil {
+		t.Fatal(err)
+	}
+	if verified.PacketDigest != finalized.PacketDigest || verified.SourceDigest != finalized.SourceDigest {
+		t.Fatalf("finalized=%+v verified=%+v", finalized, verified)
 	}
 }
 
